@@ -1,0 +1,104 @@
+<div class="div_{{ tag }}" class="col-md-12">
+    <div class="col-xs-3">
+        <div class="checkbox" style="display:inline">
+            <label>
+                <input type="radio"
+                       name="optionsTemporized_{{ tag }}"
+                       id="optionsTemporizedNo_{{ tag }}"
+                        {% if multimediaObject.getProperty('temporized_' ~  tag )  == "-1" or hasTag %}checked{% endif %}
+                        {% if not hasTag %}disabled{% endif %}
+                       value="-1"
+                       onclick="setDisabled{{ tag }}()"
+                >
+                {% trans %}Permanent{% endtrans %}
+            </label>
+        </div>
+    </div>
+
+    <div class="col-xs-3">
+        <div class="checkbox" style="display:inline">
+            <label>
+                <input type="radio"
+                       name="optionsTemporized_{{ tag }}"
+                       id="optionsTemporized_{{ tag }}"
+                        {% if multimediaObject.getProperty('temporized_' ~ tag)  == "1" %}checked{% endif %}
+                        {% if not hasTag %}disabled{% endif %}
+                       value="1"
+                       onclick="setDisabled{{ tag }}()"
+                >
+                {% trans %}Temporary{% endtrans %}
+            </label>
+        </div>
+    </div>
+
+    <div class="date_config_{{ tag }}">
+        <div class="col-xs-3">
+            <label>{% trans %}From{% endtrans %}</label>
+            <input type="date"
+                   class="temporized_{{ tag }} form-control"
+                   pattern="(\d\d\d\d)-(\d\d)-(\d\d)"
+                   title="Format YYYY-MM-DD"
+                   id="temporized_from_{{ tag }}"
+                   name="temporized_from_{{ tag }}[{{ tag }}]"
+                   required
+                   {% if not hasTag %}disabled{% endif %}
+                    {% if multimediaObject.getProperty('temporized_from_' ~ tag) %}
+                        value="{{ multimediaObject.getProperty('temporized_from_' ~ tag) }}"
+                    {% else %}
+                        disabled
+                    {% endif %}
+            >
+
+        </div>
+
+        <div class="col-xs-3">
+            <label>{% trans %}To{% endtrans %}</label>
+            <input type="date" class="temporized_{{ tag }} form-control"
+                   pattern="(\d\d\d\d)-(\d\d)-(\d\d)"
+                   title="Format YYYY-MM-DD"
+                   id="temporized_to_{{ tag }}"
+                   name="temporized_to_{{ tag }}[{{ tag }}]"
+                   required
+                   {% if not hasTag %}disabled{% endif %}
+                    {% if multimediaObject.getProperty('temporized_to_'  ~ tag ) %}
+                        value="{{ multimediaObject.getProperty('temporized_to_' ~ tag) }}"
+                    {% else %}
+                        disabled
+                    {% endif %}
+            >
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function setDisabled{{ tag }}() {
+        var type = $('input[name=optionsTemporized_{{ tag }}]:checked', '#pumukitnewadmin_mms_updatepub_form').val();
+        if("1" == type) {
+            $('#temporized_from_{{ tag }}').attr('disabled',false);
+            $('#temporized_to_{{ tag }}').attr('disabled',false);
+        } else if("-1" == type) {
+            $('#temporized_from_{{ tag }}').attr('disabled',true);
+            $('#temporized_to_{{ tag }}').attr('disabled',true);
+        }
+    }
+
+    $('#pub_decisions_{{ tag }}').on('click', function(event) {
+
+         var checked = $('#pub_decisions_' + "{{ tag }}" +':checked').val();
+         if(checked == 'undefined') {
+             $("#optionsTemporized_{{ tag }}").attr('disabled',true);
+             $("#optionsTemporizedNo_{{ tag }}").prop('checked',true);
+             $("#optionsTemporizedNo_{{ tag }}").attr('disabled',true);
+             $('#temporized_from_{{ tag }}').attr('disabled',true);
+             $('#temporized_to_{{ tag }}').attr('disabled',true);
+         } else {
+             $("#optionsTemporized_{{ tag }}").attr('disabled',false);
+             $("#optionsTemporizedNo_{{ tag }}").prop('checked',true);
+             $("#optionsTemporizedNo_{{ tag }}").attr('disabled',false);
+             $('#temporized_from_{{ tag }}').attr('disabled',true);
+             $('#temporized_to_{{ tag }}').attr('disabled',true);
+         }
+    })
+
+</script>
+

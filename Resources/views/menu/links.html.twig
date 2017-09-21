@@ -1,0 +1,7 @@
+{% for channel in temporizedChannels %}
+    <li>
+        <a href="{{ path('pumukit_timed_pub_decisions_by_tag', {'tagCod' : channel.cod }) }}" title="{{ channel.title }}">
+            {{ channel.title }}
+        </a>
+    </li>
+{% endfor %}

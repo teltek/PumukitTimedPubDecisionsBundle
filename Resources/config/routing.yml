@@ -1,0 +1,3 @@
+pumukit_timed_pub_decisions_bundle:
+    resource: "@PumukitTimedPubDecisionsBundle/Controller/"
+    type:     annotation
