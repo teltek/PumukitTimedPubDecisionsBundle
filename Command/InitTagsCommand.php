@@ -25,6 +25,8 @@ This command will create two new tags ( PUDERADIO and PUDETV )
 
 The --force parameter has to be used to drop old created tag PUDERADIO and PUDETV from the database.
 
+Ever drops old tags.
+
 EOT
             );
     }
@@ -34,11 +36,6 @@ EOT
         $this->dm = $this->getContainer()->get('doctrine_mongodb')->getManager();
         $this->languages = $this->getContainer()->getParameter('pumukit2.locales');
 
-        $check = true;
-        if (!$input->getOption('force')) {
-            $check = $this->checkTags($output);
-        }
-
         $parentTag = $this->dm->getRepository('PumukitSchemaBundle:Tag')->findOneBy(array('cod' => 'PUBDECISIONS'));
         if (!$parentTag) {
             throw new \Exception(
@@ -46,7 +43,9 @@ EOT
             );
         }
 
-        if ($check && $parentTag) {
+        $allowDelete = $this->checkTags($output);
+
+        if ($allowDelete) {
             $this->removeTags($output);
             $this->addTags($parentTag, $output);
         }
@@ -66,11 +65,10 @@ EOT
             foreach ($foundTags as $tag) {
                 if (0 < $tag->getNumberMultimediaObjects()) {
                     $output->writeln('<info> '.$tag->getCod().' has '.$tag->getNumberMultimediaObjects().' multimedia objects associated</info>');
+
+                    return false;
                 }
             }
-            $output->writeln('<error> Please run the operation with --force to execute.</error>');
-
-            return false;
         }
 
         return true;
