@@ -34,10 +34,9 @@
     <div class="date_config_{{ tag }}">
         <div class="col-xs-3">
             <label>{% trans %}From{% endtrans %}</label>
-            <input type="date"
+            <input type="datetime-local"
                    class="temporized_{{ tag }} form-control"
-                   pattern="(\d\d\d\d)-(\d\d)-(\d\d)"
-                   title="Format YYYY-MM-DD"
+                   title="datefrom"
                    id="temporized_from_{{ tag }}"
                    name="temporized_from_{{ tag }}[{{ tag }}]"
                    required
@@ -53,9 +52,8 @@
 
         <div class="col-xs-3">
             <label>{% trans %}To{% endtrans %}</label>
-            <input type="date" class="temporized_{{ tag }} form-control"
-                   pattern="(\d\d\d\d)-(\d\d)-(\d\d)"
-                   title="Format YYYY-MM-DD"
+            <input type="datetime-local" class="temporized_{{ tag }} form-control"
+                   title="dateto"
                    id="temporized_to_{{ tag }}"
                    name="temporized_to_{{ tag }}[{{ tag }}]"
                    required
@@ -98,7 +96,17 @@
              $('#temporized_from_{{ tag }}').attr('disabled',true);
              $('#temporized_to_{{ tag }}').attr('disabled',true);
          }
-    })
+    });
+
+    $("#temporized_to_{{ tag }}").on('focusout', function(event){
+        event.preventDefault();
+        var starts = $("#temporized_from_{{ tag }}").val();
+        var ends = $(this).val();
+        if(Date.parse(starts) > Date.parse(ends)) {
+            alert("{% trans %}Temporized date to cannot be smaller than temporized date from{% endtrans %}");
+            $(this).val(starts);
+        }
+    });
 
 </script>
 

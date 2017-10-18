@@ -61,10 +61,10 @@ class TimedPubDecisionsController extends Controller
             $recordDate = $multimediaObject->getRecordDate();
             $year = $recordDate->format('Y');
             if ($multimediaObject->getProperty('temporized_'.$tag->getCod())) {
-                $date = date('Y-m-d');
+                $date = date('Y-m-d H:i');
                 $from = $multimediaObject->getProperty('temporized_from_'.$tag->getCod());
                 $to = $multimediaObject->getProperty('temporized_to_'.$tag->getCod());
-                if ($date > $from and $to > $date) {
+                if (strtotime($date) > strtotime($from) and strtotime($to) > strtotime($date)) {
                     $mmoGroupBy[$year][] = $multimediaObject;
                 }
             } else {
