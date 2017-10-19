@@ -6,10 +6,11 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Pumukit\CoreBundle\Controller\WebTVController;
 use Symfony\Component\HttpFoundation\Request;
 use Pumukit\SchemaBundle\Document\Tag;
 
-class TimedPubDecisionsController extends Controller
+class TimedPubDecisionsController extends Controller implements WebTVController
 {
     private $temporizedChannels = array('PUDETV', 'PUDERADIO');
 
@@ -56,6 +57,10 @@ class TimedPubDecisionsController extends Controller
         $dm = $this->container->get('doctrine_mongodb')->getManager();
 
         $multimediaObjects = $dm->getRepository('PumukitSchemaBundle:MultimediaObject')->findBy(array('tags.cod' => $tag->getCod()));
+        /*$multimediaObjects= $dm->getRepository('PumukitSchemaBundle:MultimediaObject')->createStandardQueryBuilder()
+            ->field('tags.cod')->equals($tag->getCod())
+            ->getQuery()
+            ->execute();*/
         $mmoGroupBy = array();
         foreach ($multimediaObjects as $multimediaObject) {
             $recordDate = $multimediaObject->getRecordDate();
@@ -64,7 +69,7 @@ class TimedPubDecisionsController extends Controller
                 $date = date('Y-m-d H:i');
                 $from = $multimediaObject->getProperty('temporized_from_'.$tag->getCod());
                 $to = $multimediaObject->getProperty('temporized_to_'.$tag->getCod());
-                if (strtotime($date) > strtotime($from) and strtotime($to) > strtotime($date)) {
+                if (strtotime($date) >= strtotime($from) and strtotime($to) >= strtotime($date)) {
                     $mmoGroupBy[$year][] = $multimediaObject;
                 }
             } else {
