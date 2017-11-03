@@ -111,7 +111,7 @@ EOT
         $tag = new Tag();
         $tag->setCod($code);
         $tag->setMetatag($metatag);
-        $tag->setDisplay(false);
+        $tag->setDisplay(true);
 
         foreach ($this->languages as $language) {
             $tag->setTitle($title, $language);

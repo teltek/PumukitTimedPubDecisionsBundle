@@ -108,5 +108,15 @@
         }
     });
 
+    $("#temporized_from_{{ tag }}").on('focusout', function(event){
+        event.preventDefault();
+        var ends = $("#temporized_to_{{ tag }}").val();
+        var starts = $(this).val();
+        if(Date.parse(starts) > Date.parse(ends)) {
+            alert("{% trans %}Temporized date from cannot be higher than temporized date to{% endtrans %}");
+            $(this).val(ends);
+        }
+    });
+
 </script>
 
