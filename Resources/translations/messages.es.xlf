@@ -13,6 +13,14 @@
                 <source>Temporary</source>
                 <target>Temporal</target>
             </trans-unit>
+            <trans-unit id="d2845340c46c11e7abc4cec278b6b50a" resname="Temporized date to cannot be smaller than temporized date from">
+                <source>Temporized date to cannot be smaller than temporized date from</source>
+                <target>Fecha fin no puede ser inferior a fecha inicial</target>
+            </trans-unit>
+            <trans-unit id="d2845430c46c11e7abc4cec278b6b50a" resname="Temporized date from cannot be higher than temporized date to">
+                <source>Temporized date from cannot be higher than temporized date to</source>
+                <target>Fecha inicial no puede ser mayor a fecha fin</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>
