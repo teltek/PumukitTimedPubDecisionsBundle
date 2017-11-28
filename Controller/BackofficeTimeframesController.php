@@ -42,6 +42,12 @@ class BackofficeTimeframesController extends Controller
 
         $status = array(MultimediaObject::STATUS_PUBLISHED);
 
+        if ($request->get('tags')) {
+            $targetTags = (array) $request->get('tags');
+        } else {
+            $targetTags = self::$tags;
+        }
+
         $qb = $this->get('doctrine_mongodb')
             ->getManager()
             ->getRepository('PumukitSchemaBundle:MultimediaObject')
@@ -55,7 +61,7 @@ class BackofficeTimeframesController extends Controller
              ->field('tracks')->elemMatch(
                  $qb->expr()->field('tags')->equals('display')->field('hide')->equals(false)
              )
-             ->field('tags.cod')->in(self::$tags)
+             ->field('tags.cod')->in($targetTags)
              ->getQuery()->execute();
 
         $XML = new \SimpleXMLElement('<data></data>');

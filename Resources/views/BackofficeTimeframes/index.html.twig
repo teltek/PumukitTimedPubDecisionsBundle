@@ -22,18 +22,18 @@
     </div>
 
     <div id="timeframes-dashboard-select" class="col-md-6">
-{# TODO
       <form id="form-destacados" name="form-destacados" method="get" action="#">
         <div id="select-destacados" style="float:left;">
           <div style="font-weight:bold;">&nbsp;Destacados <span style="color:{{ colors['PUDERADIO'] }}">Radio</span> / <span style="color:{{ colors['PUDETV'] }}">TV</span></div>
 
 
-          <select name="destacados" id="destacados" onchange="Javascript:this.form.submit();">
+          <select name="tags" onchange="Javascript:this.form.submit();">
             <option value="all">Todos</option>
-            <option value="tv">Destacados TV</option>
-            <option value="radio">Destacados Radio</option>
+            <option value="PUDETV" {% if app.request.get('tags') == 'PUDETV' %}selected="selected"{% endif %}>Destacados TV</option>
+            <option value="PUDERADIO" {% if app.request.get('tags') == 'PUDERADIO' %}selected="selected"{% endif %}>Destacados Radio</option>
           </select>
         </div>
+{# TODO
         <div id="contenedor-checkbox-destacados" style="float:left;">
           <div>&nbsp;</div>
           <div style="height:20px;float:left; ">
@@ -50,8 +50,8 @@
           </div>
           <div style="float:left;font-weight:bold;margin-top:5px;">Incluir piezas no publicadas o en proceso</div>
         </div>
-      </form>
 #}
+      </form>
     </div>
 
     <div class="col-md-3 text-right"><a href="javascript:centraTimeline();">Centrar hoy</a></div>
@@ -63,7 +63,7 @@
 <div class="text-center well">
 
 
-  <div id="my-timeline" style="height: 300px; border: 1px solid #aaa"></div>
+  <div id="my-timeline" style="height: calc(100vh - 350px); border: 1px solid #aaa"></div>
   <br />
   <br />
   <noscript>
@@ -101,7 +101,7 @@
     bandInfos[1].highlight = true;
 
     tl = Timeline.create(document.getElementById('my-timeline'), bandInfos);
-    tl.loadXML('{{ path('pumukit_newadmin_timeframes_xml')}}', function(xml, url) { eventSource.loadXML(xml, url); });
+    tl.loadXML('{{ path('pumukit_newadmin_timeframes_xml')}}' + window.location.search, function(xml, url) { eventSource.loadXML(xml, url); });
 
 });
 
