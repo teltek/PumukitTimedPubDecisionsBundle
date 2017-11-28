@@ -21,6 +21,10 @@
         <source>Temporized date from cannot be higher than temporized date to</source>
         <target>Temporized date from cannot be higher than temporized date to</target>
       </trans-unit>
+      <trans-unit id="ee303a309213e94462f3b87ac10b7361" resname="Timed Publishing Decisions Timeframes">
+        <source>Timed Publishing Decisions Timeframes</source>
+        <target>Timed Publishing Decisions Timeframes</target>
+      </trans-unit>
     </body>
   </file>
 </xliff>

@@ -21,6 +21,10 @@
                 <source>Temporized date from cannot be higher than temporized date to</source>
                 <target>Fecha inicial no puede ser mayor a fecha fin</target>
             </trans-unit>
+            <trans-unit id="ee303a309213e94462f3b87ac10b7361" resname="Timed Publishing Decisions Timeframes">
+              <source>Timed Publishing Decisions Timeframes</source>
+              <target>Línea de tiempo de publicaciones editoriales temporizables</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>

@@ -1,0 +1,157 @@
+{% extends 'PumukitNewAdminBundle::layout.html.twig' %}
+
+{% block stylesheets %}
+  {{ parent() }}
+  <link rel="stylesheet" type="text/css" media="screen" href="{{ asset('/bundles/pumukitnewadmin/css/admin/dashboard.css') }}" />
+{% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script type="text/javascript" src="{{ asset('/bundles/pumukitnewadmin/js/timeline_2.3.1/timeline_js/timeline-api.js') }}"></script>
+{% endblock %}
+
+{% block body %}
+<h1>{% trans %}Timed Publishing Decisions Timeframes{% endtrans %}</h1>
+
+
+<div class="well">
+  <div class="row">
+    <div id="leyenda" class="col-md-3">
+      <div style="color: {{ colors['PUDERADIO'] }}; border-top: 3px solid;">Destacados Radio</div>
+      <div style="color: {{ colors['PUDETV'] }}; border-top: 3px solid;">Destacados TV</div>
+    </div>
+
+    <div id="timeframes-dashboard-select" class="col-md-6">
+{# TODO
+      <form id="form-destacados" name="form-destacados" method="get" action="#">
+        <div id="select-destacados" style="float:left;">
+          <div style="font-weight:bold;">&nbsp;Destacados <span style="color:{{ colors['PUDERADIO'] }}">Radio</span> / <span style="color:{{ colors['PUDETV'] }}">TV</span></div>
+
+
+          <select name="destacados" id="destacados" onchange="Javascript:this.form.submit();">
+            <option value="all">Todos</option>
+            <option value="tv">Destacados TV</option>
+            <option value="radio">Destacados Radio</option>
+          </select>
+        </div>
+        <div id="contenedor-checkbox-destacados" style="float:left;">
+          <div>&nbsp;</div>
+          <div style="height:20px;float:left; ">
+            <input type='hidden' value='0' name='incluye_fijas'><?php // para forzar que envíe 0 cuando el checkbox está inactivo?>
+            <input type="checkbox" name="incluye_fijas" id="incluye_fijas" value="1" style="margin:5px 3px;" onchange="Javascript:this.form.submit();" />
+          </div>
+          <div style="float:left;font-weight:bold;margin-top:5px;">Incluir <span style="border-top: 3px solid #CFDEEA;">decisiones editoriales fijas</span></div>
+        </div>
+        <div id="contenedor-checkbox-publicados" style="float:left;">
+          <div>&nbsp;</div>
+          <div style="height:20px;float:left; ">
+            <input type='hidden' value='0' name='incluye_en_proceso'><?php // para forzar que envíe 0 cuando el checkbox está inactivo?>
+            <input type="checkbox" name="incluye_en_proceso" id="incluye_en_proceso" value="1" style="margin:5px 3px 5px 20px;" onchange="Javascript:this.form.submit();" />
+          </div>
+          <div style="float:left;font-weight:bold;margin-top:5px;">Incluir piezas no publicadas o en proceso</div>
+        </div>
+      </form>
+#}
+    </div>
+
+    <div class="col-md-3 text-right"><a href="javascript:centraTimeline();">Centrar hoy</a></div>
+
+  </div>
+</div>
+
+
+<div class="text-center well">
+
+
+  <div id="my-timeline" style="height: 300px; border: 1px solid #aaa"></div>
+  <br />
+  <br />
+  <noscript>
+     {% trans %}This page uses Javascript to show you a Timeline.{% endtrans %}
+     {% trans %}Please enable Javascript in your browser to see the full page.{% endtrans %}
+     {% trans %}Thank you.{% endtrans %}
+  </noscript>
+</div>
+
+<script type="text/javascript">
+
+  $(function(){
+
+
+    var eventSource = new Timeline.DefaultEventSource();
+    var bandInfos = [
+      Timeline.createBandInfo({
+        eventSource:    eventSource,
+        timeZone:       1,
+        width: '85%',
+        intervalUnit:   Timeline.DateTime.DAY,
+        intervalPixels: 80
+      }),
+      Timeline.createBandInfo({
+        eventSource:    eventSource,
+        timeZone:       1,
+        overview: true,
+        width: '15%',
+        intervalUnit:   Timeline.DateTime.MONTH,
+        intervalPixels: 200
+      })
+    ];
+
+    bandInfos[1].syncWith = 0;
+    bandInfos[1].highlight = true;
+
+    tl = Timeline.create(document.getElementById('my-timeline'), bandInfos);
+    tl.loadXML('{{ path('pumukit_newadmin_timeframes_xml')}}', function(xml, url) { eventSource.loadXML(xml, url); });
+
+});
+
+
+function centraTimeline() {
+  tl.getBand(0).scrollToCenter(new Date());
+}
+
+
+
+{# Sobrecargo la función que pinta la burbuja y sólo pinto el título y la fecha traducida al español #}
+var oldFillInfoBubble = Timeline.DefaultEventSource.Event.prototype.fillInfoBubble;
+var weekday = new Array("Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado");
+var monthname = new Array("Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre");
+Timeline.DefaultEventSource.Event.prototype.fillInfoBubble = function(elmt, theme, labeller) {
+    var eventObject = this;
+    if (eventObject._end != eventObject._earliestEnd && eventObject._start != eventObject._latestStart){
+        var div_title = document.createElement("div");
+        div_title.className = "timeline-event-bubble-title";
+        var a_title = document.createElement("a");
+        a_title.setAttribute('href', eventObject._link);
+        a_title.innerHTML = eventObject._text;
+        div_title.appendChild(a_title);
+        var div_time = document.createElement("div");
+        div_time.className = "timeline-event-bubble-time";
+        div_time.innerText = "Decisión editorial permanente";
+        elmt.appendChild(div_title);
+        elmt.appendChild(div_time);
+    } else {
+        // oldFillInfoBubble.call(this, elmt, theme, labeller); // antigua función para crear el html de la burbuja
+        var start = new Date(eventObject._start);
+        var start_es = weekday[start.getDay()] + " " + start.getDate() + " de " + monthname[start.getMonth()] + " de " + start.getFullYear() + " " + start.toLocaleTimeString();
+        var end = new Date(eventObject._end);
+        var end_es = weekday[end.getDay()] + " " + end.getDate() + " de " + monthname[end.getMonth()] + " de " + end.getFullYear() + " " + end.toLocaleTimeString();
+        var div_title = document.createElement("div");
+        div_title.className = "timeline-event-bubble-title";
+        var a_title = document.createElement("a");
+        a_title.setAttribute('href', eventObject._link);
+        a_title.innerHTML = eventObject._text;
+        div_title.appendChild(a_title);
+        var div_time = document.createElement("div");
+        div_time.className = "timeline-event-bubble-time";
+        div_time.innerText = start_es + "\n" + end_es;
+        elmt.appendChild(div_title);
+        elmt.appendChild(div_time);
+    }
+}
+</script>
+<br />
+<br />
+
+
+{% endblock %}

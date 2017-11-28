@@ -8,5 +8,8 @@
             <argument type="service" id="service_container" />
             <tag name="kernel.event_listener" event="publication.submit" method="onPublicationSubmit"/>
         </service>
+        <service id="pumukittimedpubdecisions.menu" class="Pumukit\TimedPubDecisionsBundle\Services\MenuService">
+          <tag name="pumukitnewadmin.menuitem" />
+        </service>
     </services>
 </container>
