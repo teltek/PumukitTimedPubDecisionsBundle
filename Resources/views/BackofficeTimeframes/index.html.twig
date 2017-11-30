@@ -29,8 +29,8 @@
 
           <select name="tags" onchange="Javascript:this.form.submit();">
             <option value="">Todos</option>
-            <option value="PUDETV" {% if app.request.get('tags') == 'PUDETV' %}selected="selected"{% endif %}>Destacados TV</option>
             <option value="PUDERADIO" {% if app.request.get('tags') == 'PUDERADIO' %}selected="selected"{% endif %}>Destacados Radio</option>
+            <option value="PUDETV" {% if app.request.get('tags') == 'PUDETV' %}selected="selected"{% endif %}>Destacados TV</option>
           </select>
         </div>
 {# TODO

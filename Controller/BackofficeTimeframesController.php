@@ -90,7 +90,7 @@ class BackofficeTimeframesController extends Controller
             }
 
             foreach (self::$colors as $cod => $color) {
-                if ($mm->containsTagWithCod($cod)) {
+                if ($mm->containsTagWithCod($cod) && in_array($cod, $targetTags)) {
                     $XMLMms->addAttribute('color', $color);
                     break;
                 }
