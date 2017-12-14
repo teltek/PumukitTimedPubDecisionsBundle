@@ -69,7 +69,7 @@ class BackofficeTimeframesController extends Controller
         $XML->addAttribute('wiki-section', 'Pumukit2 time-line Feed');
 
         foreach ($mms as $mm) {
-            $XMLMms = $XML->addChild('event', $mm->getTitle());
+            $XMLMms = $XML->addChild('event', htmlspecialchars($mm->getTitle()));
             $XMLMms->addAttribute('durationEvent', 'true');
 
             foreach (self::$tags as $tag) {
