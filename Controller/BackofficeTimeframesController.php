@@ -31,7 +31,7 @@ class BackofficeTimeframesController extends Controller
     }
 
     /**
-     * @Route("/timeframes/series/timeline.xml", name="pumukit_newadmin_timeframes_xml")
+     * @Route("/admin/timeframes/series/timeline.xml", name="pumukit_newadmin_timeframes_xml")
      */
     public function seriesTimelineAction(Request $request)
     {
@@ -69,10 +69,10 @@ class BackofficeTimeframesController extends Controller
         $XML->addAttribute('wiki-section', 'Pumukit2 time-line Feed');
 
         foreach ($mms as $mm) {
-            $XMLMms = $XML->addChild('event', htmlspecialchars($mm->getTitle()));
-            $XMLMms->addAttribute('durationEvent', 'true');
-
             foreach (self::$tags as $tag) {
+                $XMLMms = $XML->addChild('event', htmlspecialchars($mm->getTitle()));
+                $XMLMms->addAttribute('durationEvent', 'true');
+
                 if ($mm->containsTagWithCod($tag)) {
                     if ($mm->getProperty('temporized_'.$tag)) {
                         $start = date('Y-m-d H:i:s', strtotime($mm->getProperty('temporized_from_'.$tag)));
@@ -87,19 +87,12 @@ class BackofficeTimeframesController extends Controller
                     }
                     break;
                 }
+
+                $XMLMms->addAttribute('color', isset(self::$colors[$tag]) ? self::$colors[$tag] : '#666666');
+                $XMLMms->addAttribute('textColor', '#000000');
+                $XMLMms->addAttribute('title', $mm->getTitle());
+                $XMLMms->addAttribute('link', $this->get('router')->generate('pumukitnewadmin_mms_shortener', array('id' => $mm->getId()), true));
             }
-
-            foreach (self::$colors as $cod => $color) {
-                if ($mm->containsTagWithCod($cod) && in_array($cod, $targetTags)) {
-                    $XMLMms->addAttribute('color', $color);
-                    break;
-                }
-            }
-
-            $XMLMms->addAttribute('textColor', '#000000');
-
-            $XMLMms->addAttribute('title', $mm->getTitle());
-            $XMLMms->addAttribute('link', $this->get('router')->generate('pumukitnewadmin_mms_shortener', array('id' => $mm->getId()), true));
         }
 
         return new Response($XML->asXML(), 200, array('Content-Type' => 'text/xml'));
