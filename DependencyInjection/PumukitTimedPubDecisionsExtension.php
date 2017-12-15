@@ -26,5 +26,9 @@ class PumukitTimedPubDecisionsExtension extends Extension
 
         $loader = new Loader\XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.xml');
+
+        $permissions = array(array('role' => 'ROLE_ACCESS_TIMEDPUBDECISIONS_TIMELINE', 'description' => 'Access timedpubdecisions timeline'));
+        $newPermissions = array_merge($container->getParameter('pumukitschema.external_permissions'), $permissions);
+        $container->setParameter('pumukitschema.external_permissions', $newPermissions);
     }
 }

@@ -18,6 +18,6 @@ class MenuService implements ItemInterface
 
     public function getAccessRole()
     {
-        return 'ROLE_ACCESS_TAGS';
+        return 'ROLE_ACCESS_TIMEDPUBDECISIONS_TIMELINE';
     }
 }
