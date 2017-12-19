@@ -69,23 +69,25 @@ class BackofficeTimeframesController extends Controller
         $XML->addAttribute('wiki-section', 'Pumukit2 time-line Feed');
 
         foreach ($mms as $mm) {
-            foreach (self::$tags as $tag) {
+            foreach ($targetTags as $tag) {
+                if (!$mm->containsTagWithCod($tag)) {
+                    continue;
+                }
+
                 $XMLMms = $XML->addChild('event', htmlspecialchars($mm->getTitle()));
                 $XMLMms->addAttribute('durationEvent', 'true');
 
-                if ($mm->containsTagWithCod($tag)) {
-                    if ($mm->getProperty('temporized_'.$tag)) {
-                        $start = date('Y-m-d H:i:s', strtotime($mm->getProperty('temporized_from_'.$tag)));
-                        $end = date('Y-m-d H:i:s', strtotime($mm->getProperty('temporized_to_'.$tag)));
-                        $XMLMms->addAttribute('start', $start);
-                        $XMLMms->addAttribute('end', $end);
-                    } else {
-                        $XMLMms->addAttribute('start', $twoMonthsBefore);
-                        $XMLMms->addAttribute('end', $twoMonthsAfter);
-                        $XMLMms->addAttribute('latestStart', $twoHoursBefore);
-                        $XMLMms->addAttribute('earliestEnd', $twoHoursAfter);
-                    }
-                    break;
+
+                if ($mm->getProperty('temporized_'.$tag)) {
+                    $start = date('Y-m-d H:i:s', strtotime($mm->getProperty('temporized_from_'.$tag)));
+                    $end = date('Y-m-d H:i:s', strtotime($mm->getProperty('temporized_to_'.$tag)));
+                    $XMLMms->addAttribute('start', $start);
+                    $XMLMms->addAttribute('end', $end);
+                } else {
+                    $XMLMms->addAttribute('start', $twoMonthsBefore);
+                    $XMLMms->addAttribute('end', $twoMonthsAfter);
+                    $XMLMms->addAttribute('latestStart', $twoHoursBefore);
+                    $XMLMms->addAttribute('earliestEnd', $twoHoursAfter);
                 }
 
                 $XMLMms->addAttribute('color', isset(self::$colors[$tag]) ? self::$colors[$tag] : '#666666');
