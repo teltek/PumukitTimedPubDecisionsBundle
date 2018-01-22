@@ -3,10 +3,8 @@
 namespace Pumukit\TimedPubDecisionsBundle\Command;
 
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
-use Pumukit\SchemaBundle\Document\Tag;
 use Pumukit\SchemaBundle\Document\MultimediaObject;
 
 class PublishCommand extends ContainerAwareCommand
@@ -37,36 +35,34 @@ EOT
         $this->dm = $this->getContainer()->get('doctrine_mongodb')->getManager();
 
         $timedCode = 'PUDERADIO';
+        $this->updateMultimediaObjects($output, $timedCode);
 
-        $mms = (array) $this->updateMultimediaObjects($timedCode);
-        foreach ($mms as $mmId) {
-            $output->writeln(sprintf("Updated mm: %s", $mmId));
-        }
-        
         $timedCode = 'PUDETV';
-
-        $mms = (array) $this->updateMultimediaObjects($timedCode);
-        foreach ($mms as $mm) {
-            $output->writeln(sprintf("Updated mm %s: %s", $mm->getTitle(), $mm->getTitle()));
-        }
-        
-
+        $this->updateMultimediaObjects($output, $timedCode);
     }
 
-
-    protected function updateMultimediaObjects($timedCode)
+    protected function updateMultimediaObjects(OutputInterface $output, $timedCode)
     {
         $repo = $this->dm->getRepository('PumukitSchemaBundle:MultimediaObject');
         $status = array(MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN);
 
         $tagCodes = array($timedCode);
         $mms = $repo->createQueryBuilder()
-             ->findAndUpdate()
              ->field('status')->in($status)
              ->field('tags.cod')->in($tagCodes)
-             ->field('properties.temporized_from_' . $timedCode)->lte(date("Y-m-d"))
-             ->field('status')->set(MultimediaObject::STATUS_PUBLISHED)
+             ->field('properties.temporized_from_'.$timedCode)->lte(date('Y-m-d H:i'))
              ->getQuery()->execute();
+
+        if ($mms) {
+            foreach ($mms as $mm) {
+                $mm->setStatus(MultimediaObject::STATUS_PUBLISHED);
+                $output->writeln(sprintf('Updated '.$timedCode.' mm: %s', $mm->getId()));
+            }
+
+            $this->dm->flush();
+        } else {
+            $output->writeln(sprintf('No multimedia objects to update'));
+        }
 
         return $mms;
     }
