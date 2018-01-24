@@ -50,10 +50,10 @@ EOT
         $mms = $repo->createQueryBuilder()
              ->field('status')->in($status)
              ->field('tags.cod')->in($tagCodes)
-             ->field('properties.temporized_from_'.$timedCode)->lte(date('Y-m-d H:i'))
+             ->field('properties.temporized_from_'.$timedCode)->lte(date('Y-m-d\TH:i'))
              ->getQuery()->execute();
 
-        if ($mms) {
+        if (0 != $mms->count()) {
             foreach ($mms as $mm) {
                 $mm->setStatus(MultimediaObject::STATUS_PUBLISHED);
                 $output->writeln(sprintf('Updated '.$timedCode.' mm: %s', $mm->getId()));
