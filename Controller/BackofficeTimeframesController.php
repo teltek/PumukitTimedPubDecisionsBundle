@@ -40,7 +40,12 @@ class BackofficeTimeframesController extends Controller
         $twoHoursBefore = date('Y-m-d H:i:s', strtotime('-2 hour'));
         $twoHoursAfter = date('Y-m-d H:i:s', strtotime('+2 hour'));
 
-        $status = array(MultimediaObject::STATUS_PUBLISHED);
+        $status = array(MultimediaObject::STATUS_PUBLISHED, MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN);
+        if ($request->get('status') == '0') {
+            $status = array(MultimediaObject::STATUS_PUBLISHED);
+        } elseif ($request->get('status') == '1') {
+            $status = array(MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN);
+        }
 
         if ($request->get('tags')) {
             $targetTags = (array) $request->get('tags');
@@ -76,7 +81,6 @@ class BackofficeTimeframesController extends Controller
 
                 $XMLMms = $XML->addChild('event', htmlspecialchars($mm->getTitle()));
                 $XMLMms->addAttribute('durationEvent', 'true');
-
 
                 if ($mm->getProperty('temporized_'.$tag)) {
                     $start = date('Y-m-d H:i:s', strtotime($mm->getProperty('temporized_from_'.$tag)));
