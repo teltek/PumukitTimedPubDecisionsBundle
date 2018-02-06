@@ -58,13 +58,16 @@ class BackofficeTimeframesController extends Controller
             ->getRepository('PumukitSchemaBundle:MultimediaObject')
             ->createQueryBuilder();
 
-        $mms = $qb
-             ->field('status')->in($status)
-             ->addAnd(
-                 $qb->expr()->field('tags.cod')->equals('PUCHWEBTV')
-             )
-             ->field('tags.cod')->in($targetTags)
-             ->getQuery()->execute();
+        $qb->field('status')->in($status)->field('tags.cod')->in($targetTags);
+
+        if ($request->get('status') != '-1') {
+            $qb->addAnd(
+                $qb->expr()->field('tags.cod')->equals('PUCHWEBTV')
+            )->field('tracks')->elemMatch(
+                $qb->expr()->field('tags')->equals('display')->field('hide')->equals(false)
+            );
+        }
+        $mms = $qb->getQuery()->execute();
 
         $XML = new \SimpleXMLElement('<data></data>');
         $XML->addAttribute('wiki-url', $request->getUri());

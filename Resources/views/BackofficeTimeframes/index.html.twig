@@ -49,6 +49,9 @@
                                 <option value="1" {% if app.request.get('status') == '1' %}selected="selected"{% endif %}>
                                     No publicado
                                 </option>
+                                <option value="-1" {% if app.request.get('status') == '-1' %}selected="selected"{% endif %}>
+                                    Todos incluidos en proceso
+                                </option>
                             </select>
                         </div>
                     </div>
