@@ -63,9 +63,6 @@ class BackofficeTimeframesController extends Controller
              ->addAnd(
                  $qb->expr()->field('tags.cod')->equals('PUCHWEBTV')
              )
-             ->field('tracks')->elemMatch(
-                 $qb->expr()->field('tags')->equals('display')->field('hide')->equals(false)
-             )
              ->field('tags.cod')->in($targetTags)
              ->getQuery()->execute();
 
