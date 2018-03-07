@@ -25,6 +25,24 @@ class BackofficeTimeframesController extends Controller
      */
     public function indexAction(Request $request)
     {
+        $session = $request->getSession();
+
+        if ($request->query->has('status')) {
+            if (trim($request->query->get('status')) === "") {
+                $session->remove('pumukit_timed_pub_decisions.status');
+            } else {
+                $session->set('pumukit_timed_pub_decisions.status', $request->query->get('status'));
+            }
+        }
+
+        if ($request->query->has('tags')) {
+            if (trim($request->query->get('tags')) === "") {
+                $session->remove('pumukit_timed_pub_decisions.tags');
+            } else {
+                $session->set('pumukit_timed_pub_decisions.tags', $request->query->get('tags'));
+            }
+        }
+
         return array(
             'colors' => self::$colors,
         );
@@ -35,20 +53,22 @@ class BackofficeTimeframesController extends Controller
      */
     public function seriesTimelineAction(Request $request)
     {
+        $session = $request->getSession();
+
         $twoMonthsBefore = date('Y-m-d H:i:s', strtotime('-2 month'));
         $twoMonthsAfter = date('Y-m-d H:i:s', strtotime('+2 month'));
         $twoHoursBefore = date('Y-m-d H:i:s', strtotime('-2 hour'));
         $twoHoursAfter = date('Y-m-d H:i:s', strtotime('+2 hour'));
 
         $status = array(MultimediaObject::STATUS_PUBLISHED, MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN);
-        if ($request->get('status') == '0') {
+        if ($session->get('pumukit_timed_pub_decisions.status') == '0') {
             $status = array(MultimediaObject::STATUS_PUBLISHED);
-        } elseif ($request->get('status') == '1') {
+        } elseif ($session->get('pumukit_timed_pub_decisions.status') == '1') {
             $status = array(MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN);
         }
 
-        if ($request->get('tags')) {
-            $targetTags = (array) $request->get('tags');
+        if ($session->has('pumukit_timed_pub_decisions.tags')) {
+            $targetTags = (array) $session->get('pumukit_timed_pub_decisions.tags');
         } else {
             $targetTags = self::$tags;
         }
@@ -60,7 +80,7 @@ class BackofficeTimeframesController extends Controller
 
         $qb->field('status')->in($status)->field('tags.cod')->in($targetTags);
 
-        if ($request->get('status') != '-1') {
+        if ($session->get('pumukit_timed_pub_decisions.status') != '-1') {
             $qb->addAnd(
                 $qb->expr()->field('tags.cod')->equals('PUCHWEBTV')
             )->field('tracks')->elemMatch(

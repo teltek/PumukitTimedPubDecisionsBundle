@@ -12,7 +12,7 @@
 
 {% block body %}
     <h1>{% trans %}Timed Publishing Decisions Timeframes{% endtrans %}</h1>
-    
+
     <div class="well">
         <div class="row">
             <div id="leyenda" class="col-md-3">
@@ -24,15 +24,15 @@
                 <form id="form-destacados" name="form-destacados" method="get" action="#">
                     <div class="col-md-3">
                         <div id="select-destacados" style="float:left;">
-                            <div style="font-weight:bold;">&nbsp;Destacados
+                            <div style="white-space: nowrap; font-weight:bold;">&nbsp;Destacados
                                 <span style="color:{{ colors['PUDERADIO'] }}">Radio</span> /
                                 <span style="color:{{ colors['PUDETV'] }}">TV</span></div>
                             <select name="tags" onchange="Javascript:this.form.submit();">
                                 <option value="">Todos</option>
-                                <option value="PUDERADIO" {% if app.request.get('tags') == 'PUDERADIO' %}selected="selected"{% endif %}>
+                                <option value="PUDERADIO" {% if app.session.get('pumukit_timed_pub_decisions.tags') == 'PUDERADIO' %}selected="selected"{% endif %}>
                                     Destacados Radio
                                 </option>
-                                <option value="PUDETV" {% if app.request.get('tags') == 'PUDETV' %}selected="selected"{% endif %}>
+                                <option value="PUDETV" {% if app.session.get('pumukit_timed_pub_decisions.tags') == 'PUDETV' %}selected="selected"{% endif %}>
                                     Destacados TV
                                 </option>
                             </select>
@@ -43,13 +43,13 @@
                             <div style="font-weight:bold;">&nbsp;Estado</div>
                             <select name="status" onchange="Javascript:this.form.submit();">
                                 <option value="">Todos</option>
-                                <option value="0" {% if app.request.get('status') == '0' %}selected="selected"{% endif %}>
+                                <option value="0" {% if app.session.get('pumukit_timed_pub_decisions.status') == '0' %}selected="selected"{% endif %}>
                                     Publicado
                                 </option>
-                                <option value="1" {% if app.request.get('status') == '1' %}selected="selected"{% endif %}>
+                                <option value="1" {% if app.session.get('pumukit_timed_pub_decisions.status') == '1' %}selected="selected"{% endif %}>
                                     No publicado
                                 </option>
-                                <option value="-1" {% if app.request.get('status') == '-1' %}selected="selected"{% endif %}>
+                                <option value="-1" {% if app.session.get('pumukit_timed_pub_decisions.status') == '-1' %}selected="selected"{% endif %}>
                                     Todos incluidos en proceso
                                 </option>
                             </select>
