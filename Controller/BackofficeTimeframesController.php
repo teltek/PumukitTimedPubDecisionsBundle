@@ -2,7 +2,7 @@
 
 namespace Pumukit\TimedPubDecisionsBundle\Controller;
 
-use Pumukit\NewAdminBundle\Controller\NewAdminController;
+use Pumukit\NewAdminBundle\Controller\NewAdminControllerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Pumukit\SchemaBundle\Document\MultimediaObject;
 
-class BackofficeTimeframesController extends Controller implements NewAdminController
+class BackofficeTimeframesController extends Controller implements NewAdminControllerInterface
 {
     public static $tags = array('PUDERADIO', 'PUDETV');
 
@@ -29,7 +29,7 @@ class BackofficeTimeframesController extends Controller implements NewAdminContr
         $session = $request->getSession();
 
         if ($request->query->has('status')) {
-            if (trim($request->query->get('status')) === "") {
+            if ('' === trim($request->query->get('status'))) {
                 $session->remove('pumukit_timed_pub_decisions.status');
             } else {
                 $session->set('pumukit_timed_pub_decisions.status', $request->query->get('status'));
@@ -37,7 +37,7 @@ class BackofficeTimeframesController extends Controller implements NewAdminContr
         }
 
         if ($request->query->has('tags')) {
-            if (trim($request->query->get('tags')) === "") {
+            if ('' === trim($request->query->get('tags'))) {
                 $session->remove('pumukit_timed_pub_decisions.tags');
             } else {
                 $session->set('pumukit_timed_pub_decisions.tags', $request->query->get('tags'));
@@ -62,9 +62,9 @@ class BackofficeTimeframesController extends Controller implements NewAdminContr
         $twoHoursAfter = date('Y-m-d H:i:s', strtotime('+2 hour'));
 
         $status = array(MultimediaObject::STATUS_PUBLISHED, MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN);
-        if ($session->get('pumukit_timed_pub_decisions.status') == '0') {
+        if ('0' == $session->get('pumukit_timed_pub_decisions.status')) {
             $status = array(MultimediaObject::STATUS_PUBLISHED);
-        } elseif ($session->get('pumukit_timed_pub_decisions.status') == '1') {
+        } elseif ('1' == $session->get('pumukit_timed_pub_decisions.status')) {
             $status = array(MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN);
         }
 
@@ -81,7 +81,7 @@ class BackofficeTimeframesController extends Controller implements NewAdminContr
 
         $qb->field('status')->in($status)->field('tags.cod')->in($targetTags);
 
-        if ($session->get('pumukit_timed_pub_decisions.status') != '-1') {
+        if ('-1' != $session->get('pumukit_timed_pub_decisions.status')) {
             $qb->addAnd(
                 $qb->expr()->field('tags.cod')->equals('PUCHWEBTV')
             )->field('tracks')->elemMatch(

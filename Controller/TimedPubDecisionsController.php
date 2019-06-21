@@ -2,15 +2,15 @@
 
 namespace Pumukit\TimedPubDecisionsBundle\Controller;
 
+use Pumukit\CoreBundle\Controller\WebTVControllerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Pumukit\CoreBundle\Controller\WebTVController;
 use Symfony\Component\HttpFoundation\Request;
 use Pumukit\SchemaBundle\Document\Tag;
 
-class TimedPubDecisionsController extends Controller implements WebTVController
+class TimedPubDecisionsController extends Controller implements WebTVControllerInterface
 {
     private $temporizedChannels = array('PUDETV', 'PUDERADIO');
 
@@ -25,7 +25,7 @@ class TimedPubDecisionsController extends Controller implements WebTVController
     public function menuTemporizedAction(Request $request)
     {
         $dm = $this->container->get('doctrine_mongodb')->getManager();
-
+        $tags = [];
         foreach ($this->temporizedChannels as $channel) {
             $tags[] = $dm->getRepository('PumukitSchemaBundle:Tag')->findOneBy(array('cod' => $channel));
         }
