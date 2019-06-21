@@ -1,15 +1,15 @@
 {
-    "name": "teltek/pmk2-timed-pub-decisions-bundle",
+    "name": "teltek/pumukit-timed-pub-decisions-bundle",
     "type": "symfony-bundle",
-    "description": "Bundle for PuMuKIT2 to configure the timed publication decisions",
+    "description": "Bundle for PuMuKIT to configure the timed publication decisions",
     "keywords": [
         "videos",
-        "symfony2",
+        "symfony",
         "bundle",
         "pumukit",
         "teltek"
     ],
-    "homepage": "https://github.com/teltek/PuMuKIT2-timed-pub-decisions-bundle",
+    "homepage": "https://github.com/teltek/PumukitTimedPubDecisionsBundle",
     "license": "proprietary",
     "authors": [
         {
@@ -18,8 +18,8 @@
         }
     ],
     "require": {
-        "php": ">=5.3.9",
-        "pumukit/pumukit2": ">=2.4"
+        "php": ">=7.2",
+        "pumukit/pumukit": ">=3.0"
     },
     "autoload": {
         "psr-4": {

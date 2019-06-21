@@ -34,7 +34,7 @@ EOT
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->dm = $this->getContainer()->get('doctrine_mongodb')->getManager();
-        $this->languages = $this->getContainer()->getParameter('pumukit2.locales');
+        $this->languages = $this->getContainer()->getParameter('pumukit.locales');
 
         $parentTag = $this->dm->getRepository('PumukitSchemaBundle:Tag')->findOneBy(array('cod' => 'PUBDECISIONS'));
         if (!$parentTag) {

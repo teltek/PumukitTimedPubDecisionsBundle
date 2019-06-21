@@ -92,7 +92,7 @@ class BackofficeTimeframesController extends Controller implements NewAdminContr
 
         $XML = new \SimpleXMLElement('<data></data>');
         $XML->addAttribute('wiki-url', $request->getUri());
-        $XML->addAttribute('wiki-section', 'Pumukit2 time-line Feed');
+        $XML->addAttribute('wiki-section', 'Pumukit time-line Feed');
 
         foreach ($mms as $mm) {
             foreach ($targetTags as $tag) {

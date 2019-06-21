@@ -23,7 +23,7 @@ Open a command console, enter your project directory and execute the
 following command to add this repo:
 
 ```bash
-$ composer config repositories.pumukittimedpubdecisionsbundle vcs https://github.com/teltek/PuMuKIT2-timed-pub-decisions-bundle.git
+$ composer config repositories.pumukittimedpubdecisionsbundle vcs git@github.com:teltek/PumukitTimedPubDecisionsBundle.git
 ```
 
 Step 2: Download the Bundle
@@ -33,7 +33,7 @@ Open a command console, enter your project directory and execute the
 following command to download the latest stable version of this bundle:
 
 ```bash
-$ composer require teltek/pmk2-timed-pub-decisions-bundle
+$ composer require teltek/pumukit-timed-pub-decisions-bundle
 ```
 
 Step 3: Install the Bundle
@@ -43,7 +43,7 @@ Install the bundle by executing the following line command. This command updates
 .
 
 ```bash
-$ cd /path/to/pumukit2/
+$ cd /path/to/pumukit/
 $ php app/console pumukit:install:bundle Pumukit/TimedPubDecisionsBundle/PumukitTimedPubDecisionsBundle
 ```
 
@@ -55,7 +55,7 @@ Open a command console, enter your project directory and execute the
 following command to import tags.
 
 ```bash
-$ cd /path/to/pumukit2/
+$ cd /path/to/pumukit/
 $ php app/console timedpubdecisions:init:tags
 ```
 
