@@ -22,11 +22,12 @@ class Configuration implements ConfigurationInterface
 
         $rootNode
             ->children()
-                ->scalarNode('default_group_temporized')
-                    ->defaultValue('year')
-                    ->info('Group multimedia objects by...')
-                ->end()
-            ->end();
+            ->scalarNode('default_group_temporized')
+            ->defaultValue('year')
+            ->info('Group multimedia objects by...')
+            ->end()
+            ->end()
+        ;
 
         return $treeBuilder;
     }

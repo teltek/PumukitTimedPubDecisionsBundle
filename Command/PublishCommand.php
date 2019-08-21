@@ -2,20 +2,21 @@
 
 namespace Pumukit\TimedPubDecisionsBundle\Command;
 
+use Pumukit\SchemaBundle\Document\MultimediaObject;
+use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
-use Pumukit\SchemaBundle\Document\MultimediaObject;
 
 class PublishCommand extends ContainerAwareCommand
 {
-    private $dm = null;
+    private $dm;
 
     protected function configure()
     {
         $this->setName('timedpubdecisions:publish:objects')
             ->setDescription(
-                'Publish multimedia objects with a temporal decision')
+                'Publish multimedia objects with a temporal decision'
+            )
             ->setHelp(
                 <<<'EOT'
 
@@ -27,7 +28,8 @@ To use in a crontab:
 
 
 EOT
-            );
+            )
+        ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -44,14 +46,14 @@ EOT
     protected function updateMultimediaObjects(OutputInterface $output, $timedCode)
     {
         $repo = $this->dm->getRepository('PumukitSchemaBundle:MultimediaObject');
-        $status = array(MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN);
+        $status = [MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN];
 
-        $tagCodes = array($timedCode);
+        $tagCodes = [$timedCode];
         $mms = $repo->createQueryBuilder()
-             ->field('status')->in($status)
-             ->field('tags.cod')->in($tagCodes)
-             ->field('properties.temporized_from_'.$timedCode)->lte(date('Y-m-d\TH:i'))
-             ->getQuery()->execute();
+            ->field('status')->in($status)
+            ->field('tags.cod')->in($tagCodes)
+            ->field('properties.temporized_from_'.$timedCode)->lte(date('Y-m-d\TH:i'))
+            ->getQuery()->execute();
 
         if (0 != $mms->count()) {
             foreach ($mms as $mm) {

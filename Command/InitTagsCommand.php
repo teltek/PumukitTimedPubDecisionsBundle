@@ -2,21 +2,21 @@
 
 namespace Pumukit\TimedPubDecisionsBundle\Command;
 
+use Pumukit\SchemaBundle\Document\Tag;
+use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
-use Pumukit\SchemaBundle\Document\Tag;
 
 class InitTagsCommand extends ContainerAwareCommand
 {
-    private $dm = null;
-    private $languages = null;
+    private $dm;
+    private $languages;
 
     protected function configure()
     {
         $this->setName('timedpubdecisions:init:tags')->setDescription(
-                'Load Timed publication decisions tag data fixture to your database'
+            'Load Timed publication decisions tag data fixture to your database'
             )->addOption('force', null, InputOption::VALUE_NONE, 'Set this parameter to execute this action')->setHelp(
                 <<<'EOT'
 Command to load a controlled Timed publication decisions tags data into a database.
@@ -36,7 +36,7 @@ EOT
         $this->dm = $this->getContainer()->get('doctrine_mongodb')->getManager();
         $this->languages = $this->getContainer()->getParameter('pumukit.locales');
 
-        $parentTag = $this->dm->getRepository('PumukitSchemaBundle:Tag')->findOneBy(array('cod' => 'PUBDECISIONS'));
+        $parentTag = $this->dm->getRepository('PumukitSchemaBundle:Tag')->findOneBy(['cod' => 'PUBDECISIONS']);
         if (!$parentTag) {
             throw new \Exception(
                 ' Nothing done - There is no tag in the database with code PUBDECISIONS to be the parent tag'
@@ -56,7 +56,7 @@ EOT
     private function checkTags($output)
     {
         $foundTags = $this->dm->getRepository('PumukitSchemaBundle:Tag')->findBy(
-            array('cod' => array('$in' => array('PUDERADIO', 'PUDETV')))
+            ['cod' => ['$in' => ['PUDERADIO', 'PUDETV']]]
         );
 
         if ($foundTags) {
@@ -77,7 +77,7 @@ EOT
     private function removeTags($output)
     {
         $pudeRadio = $this->dm->getRepository('PumukitSchemaBundle:Tag')->findOneBy(
-            array('cod' => 'PUDERADIO')
+            ['cod' => 'PUDERADIO']
         );
 
         if ($pudeRadio) {
@@ -87,7 +87,7 @@ EOT
         }
 
         $pudeTV = $this->dm->getRepository('PumukitSchemaBundle:Tag')->findOneBy(
-            array('cod' => 'PUDETV')
+            ['cod' => 'PUDETV']
         );
 
         if ($pudeTV) {

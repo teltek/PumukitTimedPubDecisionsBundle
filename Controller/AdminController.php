@@ -3,10 +3,10 @@
 namespace Pumukit\TimedPubDecisionsBundle\Controller;
 
 use Pumukit\SchemaBundle\Document\MultimediaObject;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\Request;
 
 class AdminController extends Controller
@@ -26,6 +26,6 @@ class AdminController extends Controller
     {
         $hasTag = $multimediaObject->containsTagWithCod($pub);
 
-        return array('tag' => $pub, 'multimediaObject' => $multimediaObject, 'hasTag' => $hasTag);
+        return ['tag' => $pub, 'multimediaObject' => $multimediaObject, 'hasTag' => $hasTag];
     }
 }

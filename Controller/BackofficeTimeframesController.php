@@ -3,21 +3,21 @@
 namespace Pumukit\TimedPubDecisionsBundle\Controller;
 
 use Pumukit\NewAdminBundle\Controller\NewAdminControllerInterface;
+use Pumukit\SchemaBundle\Document\MultimediaObject;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Pumukit\SchemaBundle\Document\MultimediaObject;
 
 class BackofficeTimeframesController extends Controller implements NewAdminControllerInterface
 {
-    public static $tags = array('PUDERADIO', 'PUDETV');
+    public static $tags = ['PUDERADIO', 'PUDETV'];
 
-    public static $colors = array(
+    public static $colors = [
         'PUDERADIO' => '#0000FF',
         'PUDETV' => '#50AA50',
-    );
+    ];
 
     /**
      * @Route("/admin/timeframes")
@@ -44,9 +44,9 @@ class BackofficeTimeframesController extends Controller implements NewAdminContr
             }
         }
 
-        return array(
+        return [
             'colors' => self::$colors,
-        );
+        ];
     }
 
     /**
@@ -61,11 +61,11 @@ class BackofficeTimeframesController extends Controller implements NewAdminContr
         $twoHoursBefore = date('Y-m-d H:i:s', strtotime('-2 hour'));
         $twoHoursAfter = date('Y-m-d H:i:s', strtotime('+2 hour'));
 
-        $status = array(MultimediaObject::STATUS_PUBLISHED, MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN);
+        $status = [MultimediaObject::STATUS_PUBLISHED, MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN];
         if ('0' == $session->get('pumukit_timed_pub_decisions.status')) {
-            $status = array(MultimediaObject::STATUS_PUBLISHED);
+            $status = [MultimediaObject::STATUS_PUBLISHED];
         } elseif ('1' == $session->get('pumukit_timed_pub_decisions.status')) {
-            $status = array(MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN);
+            $status = [MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN];
         }
 
         if ($session->has('pumukit_timed_pub_decisions.tags')) {
@@ -77,7 +77,8 @@ class BackofficeTimeframesController extends Controller implements NewAdminContr
         $qb = $this->get('doctrine_mongodb')
             ->getManager()
             ->getRepository('PumukitSchemaBundle:MultimediaObject')
-            ->createQueryBuilder();
+            ->createQueryBuilder()
+        ;
 
         $qb->field('status')->in($status)->field('tags.cod')->in($targetTags);
 
@@ -118,10 +119,10 @@ class BackofficeTimeframesController extends Controller implements NewAdminContr
                 $XMLMms->addAttribute('color', isset(self::$colors[$tag]) ? self::$colors[$tag] : '#666666');
                 $XMLMms->addAttribute('textColor', '#000000');
                 $XMLMms->addAttribute('title', $mm->getTitle());
-                $XMLMms->addAttribute('link', $this->get('router')->generate('pumukitnewadmin_mms_shortener', array('id' => $mm->getId()), true));
+                $XMLMms->addAttribute('link', $this->get('router')->generate('pumukitnewadmin_mms_shortener', ['id' => $mm->getId()], true));
             }
         }
 
-        return new Response($XML->asXML(), 200, array('Content-Type' => 'text/xml'));
+        return new Response($XML->asXML(), 200, ['Content-Type' => 'text/xml']);
     }
 }
