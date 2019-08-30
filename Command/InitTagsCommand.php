@@ -17,8 +17,8 @@ class InitTagsCommand extends ContainerAwareCommand
     {
         $this->setName('timedpubdecisions:init:tags')->setDescription(
             'Load Timed publication decisions tag data fixture to your database'
-            )->addOption('force', null, InputOption::VALUE_NONE, 'Set this parameter to execute this action')->setHelp(
-                <<<'EOT'
+        )->addOption('force', null, InputOption::VALUE_NONE, 'Set this parameter to execute this action')->setHelp(
+            <<<'EOT'
 Command to load a controlled Timed publication decisions tags data into a database.
 
 This command will create two new tags ( PUDERADIO and PUDETV )
@@ -28,7 +28,7 @@ The --force parameter has to be used to drop old created tag PUDERADIO and PUDET
 Ever drops old tags.
 
 EOT
-            );
+        );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
