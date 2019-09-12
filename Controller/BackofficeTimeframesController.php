@@ -76,7 +76,7 @@ class BackofficeTimeframesController extends Controller implements NewAdminContr
 
         $qb = $this->get('doctrine_mongodb')
             ->getManager()
-            ->getRepository('PumukitSchemaBundle:MultimediaObject')
+            ->getRepository(MultimediaObject::class)
             ->createQueryBuilder()
         ;
 
@@ -85,8 +85,23 @@ class BackofficeTimeframesController extends Controller implements NewAdminContr
         if ('-1' != $session->get('pumukit_timed_pub_decisions.status')) {
             $qb->addAnd(
                 $qb->expr()->field('tags.cod')->equals('PUCHWEBTV')
-            )->field('tracks')->elemMatch(
-                $qb->expr()->field('tags')->equals('display')->field('hide')->equals(false)
+            );
+
+            $qb->addOr(
+                [
+                    'tracks' => [
+                        '$elemMatch' => [
+                            'tags' => 'display',
+                            'hide' => false,
+                        ]
+                    ]
+                ],
+                [
+                    'properties.externalplayer' => [
+                        '$exists' => true,
+                        '$ne' => '',
+                    ],
+                ]
             );
         }
         $mms = $qb->getQuery()->execute();
