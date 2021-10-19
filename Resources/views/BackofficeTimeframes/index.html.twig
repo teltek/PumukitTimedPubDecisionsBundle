@@ -1,4 +1,4 @@
-{% extends 'PumukitNewAdminBundle::layout.html.twig' %}
+{% extends '@PumukitNewAdminBundle/layout.html.twig' %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -57,24 +57,6 @@
                     </div>
                 </form>
             </div>
-            {# TODO
-                    <div id="contenedor-checkbox-destacados" style="float:left;">
-                      <div>&nbsp;</div>
-                      <div style="height:20px;float:left; ">
-                        <input type='hidden' value='0' name='incluye_fijas'><?php // para forzar que envíe 0 cuando el checkbox está inactivo?>
-                        <input type="checkbox" name="incluye_fijas" id="incluye_fijas" value="1" style="margin:5px 3px;" onchange="Javascript:this.form.submit();" />
-                      </div>
-                      <div style="float:left;font-weight:bold;margin-top:5px;">Incluir <span style="border-top: 3px solid #CFDEEA;">decisiones editoriales fijas</span></div>
-                    </div>
-                    <div id="contenedor-checkbox-publicados" style="float:left;">
-                      <div>&nbsp;</div>
-                      <div style="height:20px;float:left; ">
-                        <input type='hidden' value='0' name='incluye_en_proceso'><?php // para forzar que envíe 0 cuando el checkbox está inactivo?>
-                        <input type="checkbox" name="incluye_en_proceso" id="incluye_en_proceso" value="1" style="margin:5px 3px 5px 20px;" onchange="Javascript:this.form.submit();" />
-                      </div>
-                      <div style="float:left;font-weight:bold;margin-top:5px;">Incluir piezas no publicadas o en proceso</div>
-                    </div>
-            #}
         </div>
 
         <div class="col-md-3 text-right"><a href="javascript:centraTimeline();">Centrar hoy</a></div>

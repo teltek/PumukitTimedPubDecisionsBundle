@@ -1,16 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pumukit\TimedPubDecisionsBundle\Controller;
 
+use Doctrine\ODM\MongoDB\DocumentManager;
 use Pumukit\NewAdminBundle\Controller\NewAdminControllerInterface;
 use Pumukit\SchemaBundle\Document\MultimediaObject;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\RouterInterface;
 
-class BackofficeTimeframesController extends Controller implements NewAdminControllerInterface
+class BackofficeTimeframesController extends AbstractController implements NewAdminControllerInterface
 {
     public static $tags = ['PUDERADIO', 'PUDETV'];
 
@@ -18,11 +21,18 @@ class BackofficeTimeframesController extends Controller implements NewAdminContr
         'PUDERADIO' => '#0000FF',
         'PUDETV' => '#50AA50',
     ];
+    private $documentManager;
+    private $router;
+
+    public function __construct(DocumentManager $documentManager, RouterInterface $router)
+    {
+        $this->documentManager = $documentManager;
+        $this->router = $router;
+    }
 
     /**
      * @Route("/admin/timeframes")
      * @Route("/admin/timeframes/default", name="pumukit_newadmin_timeframes_index_default")
-     * @Template
      */
     public function indexAction(Request $request)
     {
@@ -44,9 +54,9 @@ class BackofficeTimeframesController extends Controller implements NewAdminContr
             }
         }
 
-        return [
+        return $this->render('@PumukitTimedPubDecisions/BackofficeTimeframes/index.html.twig', [
             'colors' => self::$colors,
-        ];
+        ]);
     }
 
     /**
@@ -62,9 +72,9 @@ class BackofficeTimeframesController extends Controller implements NewAdminContr
         $twoHoursAfter = date('Y-m-d H:i:s', strtotime('+2 hour'));
 
         $status = [MultimediaObject::STATUS_PUBLISHED, MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN];
-        if ('0' == $session->get('pumukit_timed_pub_decisions.status')) {
+        if ('0' === $session->get('pumukit_timed_pub_decisions.status')) {
             $status = [MultimediaObject::STATUS_PUBLISHED];
-        } elseif ('1' == $session->get('pumukit_timed_pub_decisions.status')) {
+        } elseif ('1' === $session->get('pumukit_timed_pub_decisions.status')) {
             $status = [MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN];
         }
 
@@ -74,7 +84,7 @@ class BackofficeTimeframesController extends Controller implements NewAdminContr
             $targetTags = self::$tags;
         }
 
-        $qb = $this->get('doctrine_mongodb')
+        $qb = $this->documentManager
             ->getManager()
             ->getRepository(MultimediaObject::class)
             ->createQueryBuilder()
@@ -82,7 +92,7 @@ class BackofficeTimeframesController extends Controller implements NewAdminContr
 
         $qb->field('status')->in($status)->field('tags.cod')->in($targetTags);
 
-        if ('-1' != $session->get('pumukit_timed_pub_decisions.status')) {
+        if ('-1' !== $session->get('pumukit_timed_pub_decisions.status')) {
             $qb->addAnd(
                 $qb->expr()->field('tags.cod')->equals('PUCHWEBTV')
             );
@@ -93,8 +103,8 @@ class BackofficeTimeframesController extends Controller implements NewAdminContr
                         '$elemMatch' => [
                             'tags' => 'display',
                             'hide' => false,
-                        ]
-                    ]
+                        ],
+                    ],
                 ],
                 [
                     'properties.externalplayer' => [
@@ -131,10 +141,10 @@ class BackofficeTimeframesController extends Controller implements NewAdminContr
                     $XMLMms->addAttribute('earliestEnd', $twoHoursAfter);
                 }
 
-                $XMLMms->addAttribute('color', isset(self::$colors[$tag]) ? self::$colors[$tag] : '#666666');
+                $XMLMms->addAttribute('color', self::$colors[$tag] ?? '#666666');
                 $XMLMms->addAttribute('textColor', '#000000');
                 $XMLMms->addAttribute('title', $mm->getTitle());
-                $XMLMms->addAttribute('link', $this->get('router')->generate('pumukitnewadmin_mms_shortener', ['id' => $mm->getId()], true));
+                $XMLMms->addAttribute('link', $this->router->generate('pumukitnewadmin_mms_shortener', ['id' => $mm->getId()], true));
             }
         }
 

@@ -1,66 +1,67 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pumukit\TimedPubDecisionsBundle\Controller;
 
+use Doctrine\ODM\MongoDB\DocumentManager;
 use Pumukit\CoreBundle\Controller\WebTVControllerInterface;
+use Pumukit\SchemaBundle\Document\MultimediaObject;
 use Pumukit\SchemaBundle\Document\Tag;
+use Pumukit\WebTVBundle\Services\BreadcrumbsService;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Translation\TranslatorInterface;
 
-class TimedPubDecisionsController extends Controller implements WebTVControllerInterface
+class TimedPubDecisionsController extends AbstractController implements WebTVControllerInterface
 {
+    private $documentManager;
+    private $breadcrumbsService;
+    private $translator;
+    private $columnsObjsByTag;
     private $temporizedChannels = ['PUDETV', 'PUDERADIO'];
+
+    public function __construct(
+        DocumentManager $documentManager,
+        BreadcrumbsService $breadcrumbsService,
+        TranslatorInterface $translator,
+        $columnsObjsByTag
+    ) {
+        $this->documentManager = $documentManager;
+        $this->breadcrumbsService = $breadcrumbsService;
+        $this->translator = $translator;
+        $this->columnsObjsByTag = $columnsObjsByTag;
+    }
 
     /**
      * @Route("/destacados/menu/", name="pumukit_timed_pub_decisions_menu")
-     * @Template("PumukitTimedPubDecisionsBundle:menu:links.html.twig")
-     *
-     * @param Request $request
-     *
-     * @return array
      */
     public function menuTemporizedAction(Request $request)
     {
-        $dm = $this->container->get('doctrine_mongodb')->getManager();
         $tags = [];
         foreach ($this->temporizedChannels as $channel) {
-            $tags[] = $dm->getRepository('PumukitSchemaBundle:Tag')->findOneBy(['cod' => $channel]);
+            $tags[] = $this->documentManager->getRepository(Tag::class)->findOneBy(['cod' => $channel]);
         }
 
-        return ['temporizedChannels' => $tags];
+        return $this->render('@PumukitTimedPubDecisions/menu/links.html.twig', ['temporizedChannels' => $tags]);
     }
 
     /**
      * @Route("/destacados/{tagCod}/", name="pumukit_timed_pub_decisions_by_tag")
      * @ParamConverter("tag", class="PumukitSchemaBundle:Tag", options={"mapping": {"tagCod": "cod"}})
-     * @Template()
-     *
-     * @param Tag     $tag
-     * @param Request $request
-     *
-     * @throws \Exception
-     *
-     * @return array
      */
-    public function temporizedByTagAction(Tag $tag, Request $request)
+    public function temporizedByTagAction(Request $request, Tag $tag)
     {
-        $translator = $this->get('translator');
         if (!in_array($tag->getCod(), $this->temporizedChannels)) {
-            throw new \Exception($translator->trans('This tag is not a temporized publication decision'));
+            throw new \Exception($this->translator->trans('This tag is not a temporized publication decision'));
         }
 
-        $numberCols = $this->container->getParameter('columns_objs_bytag');
+        $multimediaObjects = $this->documentManager->getRepository(MultimediaObject::class)->findBy([
+            'tags.cod' => $tag->getCod(),
+        ]);
 
-        $dm = $this->container->get('doctrine_mongodb')->getManager();
-
-        $multimediaObjects = $dm->getRepository('PumukitSchemaBundle:MultimediaObject')->findBy(['tags.cod' => $tag->getCod()]);
-        /*$multimediaObjects= $dm->getRepository('PumukitSchemaBundle:MultimediaObject')->createStandardQueryBuilder()
-            ->field('tags.cod')->equals($tag->getCod())
-            ->getQuery()
-            ->execute();*/
         $mmoGroupBy = [];
         foreach ($multimediaObjects as $multimediaObject) {
             $recordDate = $multimediaObject->getRecordDate();
@@ -69,7 +70,7 @@ class TimedPubDecisionsController extends Controller implements WebTVControllerI
                 $date = date('Y-m-d H:i');
                 $from = $multimediaObject->getProperty('temporized_from_'.$tag->getCod());
                 $to = $multimediaObject->getProperty('temporized_to_'.$tag->getCod());
-                if (strtotime($date) >= strtotime($from) and strtotime($to) >= strtotime($date)) {
+                if (strtotime($date) >= strtotime($from) && strtotime($to) >= strtotime($date)) {
                     $mmoGroupBy[$year][] = $multimediaObject;
                 }
             } else {
@@ -82,22 +83,16 @@ class TimedPubDecisionsController extends Controller implements WebTVControllerI
         $this->updateBreadcrumbs($tag->getTitle(), 'pumukit_timed_pub_decisions_by_tag', ['tagCod' => $tag->getCod()]);
         $title = $tag->getTitle();
 
-        return [
+        return $this->render('@PumukitTimedPubDecisions/TimedPubDecisions/temporizedByTag.html.twig', [
             'title' => $title,
             'multimediaObjects' => $mmoGroupBy,
             'tag' => $tag,
-            'number_cols' => $numberCols,
-        ];
+            'number_cols' => $this->columnsObjsByTag,
+        ]);
     }
 
-    /**
-     * @param       $title
-     * @param       $routeName
-     * @param array $routeParameters
-     */
-    private function updateBreadcrumbs($title, $routeName, array $routeParameters = [])
+    private function updateBreadcrumbs(string $title, string $routeName, array $routeParameters = []): void
     {
-        $breadcrumbs = $this->get('pumukit_web_tv.breadcrumbs');
-        $breadcrumbs->add($title, $routeName, $routeParameters);
+        $this->breadcrumbsService->add($title, $routeName, $routeParameters);
     }
 }

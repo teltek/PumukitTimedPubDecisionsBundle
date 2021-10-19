@@ -1,21 +1,30 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pumukit\TimedPubDecisionsBundle\Command;
 
+use Doctrine\ODM\MongoDB\DocumentManager;
 use Pumukit\SchemaBundle\Document\Tag;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class InitTagsCommand extends ContainerAwareCommand
+class InitTagsCommand extends Command
 {
-    private $dm;
-    private $languages;
+    private $documentManager;
+    private $locales;
 
-    protected function configure()
+    public function __construct(DocumentManager $documentManager, array $locales)
     {
-        $this->setName('timedpubdecisions:init:tags')->setDescription(
+        $this->documentManager = $documentManager;
+        $this->locales = $locales;
+    }
+
+    protected function configure(): void
+    {
+        $this->setName('pumukit:timed:pub:decisions:init:tags')->setDescription(
             'Load Timed publication decisions tag data fixture to your database'
         )->addOption('force', null, InputOption::VALUE_NONE, 'Set this parameter to execute this action')->setHelp(
             <<<'EOT'
@@ -31,12 +40,9 @@ EOT
         );
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $this->dm = $this->getContainer()->get('doctrine_mongodb')->getManager();
-        $this->languages = $this->getContainer()->getParameter('pumukit.locales');
-
-        $parentTag = $this->dm->getRepository('PumukitSchemaBundle:Tag')->findOneBy(['cod' => 'PUBDECISIONS']);
+        $parentTag = $this->documentManager->getRepository(Tag::class)->findOneBy(['cod' => 'PUBDECISIONS']);
         if (!$parentTag) {
             throw new \Exception(
                 ' Nothing done - There is no tag in the database with code PUBDECISIONS to be the parent tag'
@@ -53,11 +59,16 @@ EOT
         return 0;
     }
 
-    private function checkTags($output)
+    private function checkTags($output): bool
     {
-        $foundTags = $this->dm->getRepository('PumukitSchemaBundle:Tag')->findBy(
-            ['cod' => ['$in' => ['PUDERADIO', 'PUDETV']]]
-        );
+        $foundTags = $this->documentManager->getRepository('PumukitSchemaBundle:Tag')->findBy([
+            'cod' => [
+                '$in' => [
+                    'PUDERADIO',
+                    'PUDETV',
+                ],
+            ],
+        ]);
 
         if ($foundTags) {
             $output->writeln('<comment> There are tags with cod PUDERADIO or PUDETV</comment>');
@@ -74,30 +85,30 @@ EOT
         return true;
     }
 
-    private function removeTags($output)
+    private function removeTags($output): void
     {
-        $pudeRadio = $this->dm->getRepository('PumukitSchemaBundle:Tag')->findOneBy(
-            ['cod' => 'PUDERADIO']
-        );
+        $pudeRadio = $this->documentManager->getRepository('PumukitSchemaBundle:Tag')->findOneBy([
+            'cod' => 'PUDERADIO',
+        ]);
 
         if ($pudeRadio) {
-            $this->dm->remove($pudeRadio);
-            $this->dm->flush();
+            $this->documentManager->remove($pudeRadio);
+            $this->documentManager->flush();
             $output->writeln('<info> Removing '.$pudeRadio->getCod().'</info>');
         }
 
-        $pudeTV = $this->dm->getRepository('PumukitSchemaBundle:Tag')->findOneBy(
+        $pudeTV = $this->documentManager->getRepository('PumukitSchemaBundle:Tag')->findOneBy(
             ['cod' => 'PUDETV']
         );
 
         if ($pudeTV) {
-            $this->dm->remove($pudeTV);
-            $this->dm->flush();
+            $this->documentManager->remove($pudeTV);
+            $this->documentManager->flush();
             $output->writeln('<info> Removing '.$pudeTV->getCod().'</info>');
         }
     }
 
-    private function addTags($parent, $output)
+    private function addTags($parent, $output): void
     {
         $radioTag = $this->createTagWithCode('PUDERADIO', 'Destacados Radio', $parent, false);
         $output->writeln('Tag persisted - new id: '.$radioTag->getId().' cod: '.$radioTag->getCod());
@@ -106,21 +117,21 @@ EOT
         $output->writeln('Tag persisted - new id: '.$tvTag->getId().' cod: '.$tvTag->getCod());
     }
 
-    private function createTagWithCode($code, $title, $parentTag, $metatag = false)
+    private function createTagWithCode($code, $title, $parentTag, $metatag = false): Tag
     {
         $tag = new Tag();
         $tag->setCod($code);
         $tag->setMetatag($metatag);
         $tag->setDisplay(true);
 
-        foreach ($this->languages as $language) {
+        foreach ($this->locales as $language) {
             $tag->setTitle($title, $language);
         }
 
         $tag->setParent($parentTag);
         $tag->setProperty('route', 'pumukit_timed_pub_decisions_index');
-        $this->dm->persist($tag);
-        $this->dm->flush();
+        $this->documentManager->persist($tag);
+        $this->documentManager->flush();
 
         return $tag;
     }

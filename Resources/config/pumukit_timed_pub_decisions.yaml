@@ -1,0 +1,17 @@
+services:
+  _defaults:
+    autowire:      true
+    autoconfigure: true
+    public:        true
+    bind:
+      $columnsObjsByTag: '%columns_objs_bytag%'
+
+  Pumukit\TimedPubDecisionsBundle\EventListener\BackofficeListener:
+    class: Pumukit\TimedPubDecisionsBundle\EventListener\BackofficeListener
+    tags:
+      - { name: 'kernel.event_listener', event: 'publication.submit', method: 'onPublicationSubmit' }
+
+  Pumukit\TimedPubDecisionsBundle\Services\MenuService:
+    class: Pumukit\TimedPubDecisionsBundle\Services\MenuService
+    tags:
+      - { name: 'pumukitnewadmin.menuitem' }
