@@ -35,7 +35,7 @@ class TimedPubDecisionsController extends Controller implements WebTVControllerI
 
     /**
      * @Route("/destacados/{tagCod}/", name="pumukit_timed_pub_decisions_by_tag")
-     * @ParamConverter("tag", class="PumukitSchemaBundle:Tag", options={"mapping": {"tagCod": "cod"}})
+     * @ParamConverter("tag", options={"mapping": {"tagCod": "cod"}})
      * @Template()
      *
      * @param Tag     $tag
