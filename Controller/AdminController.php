@@ -13,7 +13,7 @@ class AdminController extends Controller
 {
     /**
      * @Route("/pubchannel/option/{id}/{pub}", name="pumukit_timed_pub_decisions_index")
-     * @ParamConverter("multimediaObject", class="PumukitSchemaBundle:MultimediaObject", options={"id" = "id"})
+     * @ParamConverter("multimediaObject", options={"id" = "id"})
      * @Template()
      *
      * @param MultimediaObject $multimediaObject
