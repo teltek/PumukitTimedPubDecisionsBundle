@@ -48,28 +48,41 @@ class TimedPubDecisionsController extends Controller implements WebTVControllerI
      */
     public function temporizedByTagAction(Tag $tag, Request $request)
     {
+        $translator = $this->get('translator');
+        if (!in_array($tag->getCod(), $this->temporizedChannels)) {
+            throw new \Exception($translator->trans('This tag is not a temporized publication decision'));
+        }
+
         [$scrollList, $numberCols, $limit] = $this->getParametersByTag();
 
-        $multimediaObjectRepository = $this->get('doctrine_mongodb.odm.document_manager')->getRepository(MultimediaObject::class);
+        $dm = $this->container->get('doctrine_mongodb')->getManager();
 
-        $breadCrumbOptions = ['tagCod' => $tag->getCod()];
-        if ($request->get('useTagAsGeneral')) {
-            $objects = $multimediaObjectRepository->createBuilderWithGeneralTag($tag, ['record_date' => -1]);
-            $title = $this->get('translator')->trans('General %title%', ['%title%' => $tag->getTitle()]);
-            $breadCrumbOptions['useTagAsGeneral'] = true;
-        } else {
-            $objects = $multimediaObjectRepository->createBuilderWithTag($tag, ['record_date' => -1]);
-            $title = $tag->getTitle();
+        $multimediaObjects = $dm->getRepository('PumukitSchemaBundle:MultimediaObject')->findBy(['tags.cod' => $tag->getCod()]);
+
+        $mmoGroupBy = [];
+        foreach ($multimediaObjects as $multimediaObject) {
+            $recordDate = $multimediaObject->getRecordDate();
+            $year = $recordDate->format('Y');
+            if ($multimediaObject->getProperty('temporized_'.$tag->getCod())) {
+                $date = date('Y-m-d H:i');
+                $from = $multimediaObject->getProperty('temporized_from_'.$tag->getCod());
+                $to = $multimediaObject->getProperty('temporized_to_'.$tag->getCod());
+                if (strtotime($date) >= strtotime($from) and strtotime($to) >= strtotime($date)) {
+                    $mmoGroupBy[$year][] = $multimediaObject;
+                }
+            } else {
+                $mmoGroupBy[$year][] = $multimediaObject;
+            }
         }
-        $this->updateBreadcrumbs($title, 'pumukit_webtv_bytag_multimediaobjects', ['tagCod' => $tag->getCod(), 'useTagAsGeneral' => true]);
 
-        $pager = $this->createPager($objects, $request->query->get('page', 1), $limit);
+        ksort($mmoGroupBy);
 
-        $title = $this->get('translator')->trans($tag->getTitle());
+        $this->updateBreadcrumbs($tag->getTitle(), 'pumukit_timed_pub_decisions_by_tag', ['tagCod' => $tag->getCod()]);
+        $title = $tag->getTitle();
 
         return [
             'title' => $title,
-            'objects' => $pager,
+            'multimediaObjects' => $mmoGroupBy,
             'tag' => $tag,
             'scroll_list' => $scrollList,
             'type' => 'multimediaobject',
@@ -78,7 +91,7 @@ class TimedPubDecisionsController extends Controller implements WebTVControllerI
             'scroll_element_value' => $tag->getCod(),
             'objectByCol' => $numberCols,
             'show_info' => true,
-            'show_description' => true,
+            'show_description' => false,
         ];
     }
 
@@ -100,19 +113,5 @@ class TimedPubDecisionsController extends Controller implements WebTVControllerI
             $this->container->getParameter('columns_objs_bytag'),
             $this->container->getParameter('limit_objs_bytag'),
         ];
-    }
-
-    /**
-     * @param array $objects
-     * @param int   $page
-     * @param int   $limit
-     *
-     * @throws \Exception
-     *
-     * @return mixed|Pagerfanta
-     */
-    private function createPager($objects, $page, $limit = 10)
-    {
-        return $this->get('pumukit_web_tv.pagination_service')->createDoctrineODMMongoDBAdapter($objects, $page, $limit);
     }
 }

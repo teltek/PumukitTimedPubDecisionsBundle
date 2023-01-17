@@ -8,7 +8,9 @@
                     <h1 class="titulo_widget">{{ title }}</h1>
                 </div>
             </div>
-            {% include 'PumukitWebTVBundle:List:template_list.html.twig' %}
+            {% for key, value in multimediaObjects | reverse %}
+                {% include 'PumukitWebTVBundle:List:template_list.html.twig' with {'objects' : value } %}
+            {% endfor %}
         </div>
     </div>
 {% endblock %}
