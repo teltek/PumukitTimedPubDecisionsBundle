@@ -10,6 +10,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class PublishCommand extends ContainerAwareCommand
 {
     private $dm;
+    private $dispatcherService;
 
     protected function configure()
     {
@@ -35,6 +36,7 @@ EOT
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->dm = $this->getContainer()->get('doctrine_mongodb')->getManager();
+        $this->dispatcherService = $this->getContainer()->get('pumukitschema.multimediaobject_dispatcher');
 
         $timedCode = 'PUDERADIO';
         $this->updateMultimediaObjects($output, $timedCode);
@@ -45,7 +47,7 @@ EOT
 
     protected function updateMultimediaObjects(OutputInterface $output, $timedCode)
     {
-        $repo = $this->dm->getRepository('PumukitSchemaBundle:MultimediaObject');
+        $repo = $this->dm->getRepository(MultimediaObject::class);
         $status = [MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN];
 
         $tagCodes = [$timedCode];
@@ -58,10 +60,12 @@ EOT
         if (0 != $mms->count()) {
             foreach ($mms as $mm) {
                 $mm->setStatus(MultimediaObject::STATUS_PUBLISHED);
+                $this->dm->flush();
+
+                $this->dispatcherService->dispatchUpdate($mm);
+
                 $output->writeln(sprintf('Updated '.$timedCode.' mm: %s', $mm->getId()));
             }
-
-            $this->dm->flush();
         } else {
             $output->writeln(sprintf('No multimedia objects to update'));
         }
