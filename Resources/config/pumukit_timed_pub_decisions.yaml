@@ -4,6 +4,8 @@ services:
     autoconfigure: true
     public:        true
     bind:
+      $scrollListByTag: '%scroll_list_bytag%'
+      $columnsObjsByTag: '%columns_objs_bytag%'
 
   Pumukit\TimedPubDecisionsBundle\Controller\:
     resource: '../../Controller'
