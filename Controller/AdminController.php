@@ -1,31 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pumukit\TimedPubDecisionsBundle\Controller;
 
 use Pumukit\SchemaBundle\Document\MultimediaObject;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
-class AdminController extends Controller
+class AdminController extends AbstractController
 {
     /**
      * @Route("/pubchannel/option/{id}/{pub}", name="pumukit_timed_pub_decisions_index")
      * @ParamConverter("multimediaObject", class="PumukitSchemaBundle:MultimediaObject", options={"id" = "id"})
-     * @Template()
-     *
-     * @param MultimediaObject $multimediaObject
-     * @param string           $pub
-     * @param Request          $request
-     *
-     * @return array
      */
-    public function optionsPubAction(MultimediaObject $multimediaObject, $pub, Request $request)
+    public function optionsPubAction(MultimediaObject $multimediaObject, $pub): Response
     {
         $hasTag = $multimediaObject->containsTagWithCod($pub);
 
-        return ['tag' => $pub, 'multimediaObject' => $multimediaObject, 'hasTag' => $hasTag];
+        return $this->render(
+            "@PumukitTimedPubDecisions/Admin/optionsPub.html.twig",
+            [
+            'tag' => $pub,
+            'multimediaObject' => $multimediaObject,
+            'hasTag' => $hasTag]
+        );
     }
 }

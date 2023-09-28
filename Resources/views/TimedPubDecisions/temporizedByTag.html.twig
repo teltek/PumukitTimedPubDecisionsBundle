@@ -1,4 +1,4 @@
-{% extends 'PumukitWebTVBundle::layout.html.twig' %}
+{% extends '@PumukitWebTV/layout.html.twig' %}
 
 {% block body %}
     <div class="row">
@@ -9,7 +9,7 @@
                 </div>
             </div>
             {% for key, value in multimediaObjects | reverse %}
-                {% include 'PumukitWebTVBundle:List:template_list.html.twig' with {'objects' : value } %}
+                {% include '@PumukitWebTV/List/template_list.html.twig' with {'objects' : value } %}
             {% endfor %}
         </div>
     </div>
