@@ -1,70 +1,23 @@
-Installation Guide
-==================
+Timed Publication Decisions Bundle
+==================================
 
-*This page is updated to the PuMuKIT 2.1.0*
-
-Before installing any bundle is necessary to login to your GitHub account. You have different ways of doing it. We recommend to use:
-
-```
-$ curl -u "username" https://api.github.com
-```
-
-For more options, visit: [https://developer.github.com/v3/#authentication](https://developer.github.com/v3/#authentication)
-
-
-Steps 1 and 2 requires you to have Composer installed globally, as explained
-in the [installation chapter](https://getcomposer.org/doc/00-intro.md)
-of the Composer documentation.
-
-Setp 1: Introduce repository in the root project composer.json
----------------------------------------------------------
-
-Open a command console, enter your project directory and execute the
-following command to add this repo:
+This bundle provides automatic timed publication video decisions.
 
 ```bash
-$ composer config repositories.pumukittimedpubdecisionsbundle vcs git@github.com:teltek/PumukitTimedPubDecisionsBundle.git
+composer require teltek/pumukit-timed-pub-decisions-bundle
 ```
 
-Step 2: Download the Bundle
----------------------------
+if not, add this to config/bundles.php
 
-Open a command console, enter your project directory and execute the
-following command to download the latest stable version of this bundle:
-
-```bash
-$ composer require teltek/pumukit-timed-pub-decisions-bundle
+```
+Pumukit\TimedPubDecisionsBundle\PumukitTimedPubDecisionsBundle::class => ['all' => true]
 ```
 
-Step 3: Install the Bundle
---------------------------
-
-Install the bundle by executing the following line command. This command updates the Kernel to enable the bundle (app/AppKernel.php) and loads the routing (app/config/routing.yml) to add the bundle routes\
-.
+Then execute the following commands
 
 ```bash
-$ cd /path/to/pumukit/
-$ php app/console pumukit:install:bundle Pumukit/TimedPubDecisionsBundle/PumukitTimedPubDecisionsBundle
-```
-
-
-Step 4: Import tags
--------------------
-
-Open a command console, enter your project directory and execute the
-following command to import tags.
-
-```bash
-$ cd /path/to/pumukit/
-$ php app/console timedpubdecisions:init:tags
-```
-
-Step 5: Clear cache
--------------------
-
-Clear cache in development and production environments
-
-```bash
-$ php app/console cache:clear
-$ php app/console cache:clear --env=prod
+php bin/console cache:clear
+php bin/console cache:clear --env=prod
+php bin/console assets:install
+php bin/console timedpubdecisions:init:tags
 ```

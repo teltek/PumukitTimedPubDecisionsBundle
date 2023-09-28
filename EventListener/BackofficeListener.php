@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pumukit\TimedPubDecisionsBundle\EventListener;
 
 use Pumukit\NewAdminBundle\Event\PublicationSubmitEvent;
@@ -14,7 +16,7 @@ class BackofficeListener
         $this->container = $container;
     }
 
-    public function onPublicationSubmit(PublicationSubmitEvent $event)
+    public function onPublicationSubmit(PublicationSubmitEvent $event): void
     {
         $dm = $this->container->get('doctrine_mongodb.odm.document_manager');
         $multimediaObject = $event->getMultimediaObject();
