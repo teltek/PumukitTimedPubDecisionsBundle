@@ -20,6 +20,8 @@ class InitTagsCommand extends Command
     {
         $this->dm = $documentManager;
         $this->languages = $locales;
+
+        parent::__construct();
     }
 
     protected function configure(): void
