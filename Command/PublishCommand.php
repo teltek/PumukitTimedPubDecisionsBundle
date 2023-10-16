@@ -49,6 +49,8 @@ EOT
 
         $timedCode = 'PUDETV';
         $this->updateMultimediaObjects($output, $timedCode);
+
+        return 0;
     }
 
     protected function updateMultimediaObjects(OutputInterface $output, $timedCode)
