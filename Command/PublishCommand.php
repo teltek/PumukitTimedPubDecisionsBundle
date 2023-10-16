@@ -53,7 +53,8 @@ EOT
             ->field('status')->in($status)
             ->field('tags.cod')->in($tagCodes)
             ->field('properties.temporized_from_'.$timedCode)->lte(date('Y-m-d\TH:i'))
-            ->getQuery()->execute();
+            ->getQuery()->execute()
+        ;
 
         if (0 != $mms->count()) {
             foreach ($mms as $mm) {

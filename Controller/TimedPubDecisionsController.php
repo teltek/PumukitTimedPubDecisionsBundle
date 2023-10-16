@@ -10,9 +10,9 @@ use Pumukit\SchemaBundle\Document\MultimediaObject;
 use Pumukit\SchemaBundle\Document\Tag;
 use Pumukit\WebTVBundle\Services\BreadcrumbsService;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 class TimedPubDecisionsController extends AbstractController implements WebTVControllerInterface
@@ -48,11 +48,12 @@ class TimedPubDecisionsController extends AbstractController implements WebTVCon
             $tags[] = $this->documentManager->getRepository(Tag::class)->findOneBy(['cod' => $channel]);
         }
 
-        return $this->render("@PumukitTimedPubDecisions/menu/links.html.twig", ['temporizedChannels' => $tags]);
+        return $this->render('@PumukitTimedPubDecisions/menu/links.html.twig', ['temporizedChannels' => $tags]);
     }
 
     /**
      * @Route("/destacados/{tagCod}/", name="pumukit_timed_pub_decisions_by_tag")
+     *
      * @ParamConverter("tag", class="PumukitSchemaBundle:Tag", options={"mapping": {"tagCod": "cod"}})
      */
     public function temporizedByTagAction(Tag $tag): Response
@@ -84,7 +85,7 @@ class TimedPubDecisionsController extends AbstractController implements WebTVCon
         $this->updateBreadcrumbs($tag->getTitle(), 'pumukit_timed_pub_decisions_by_tag', ['tagCod' => $tag->getCod()]);
         $title = $tag->getTitle();
 
-        return $this->render("@PumukitTimedPubDecisions/TimedPubDecisions/temporizedByTag.html.twig", [
+        return $this->render('@PumukitTimedPubDecisions/TimedPubDecisions/temporizedByTag.html.twig', [
             'title' => $title,
             'multimediaObjects' => $mmoGroupBy,
             'tag' => $tag,
