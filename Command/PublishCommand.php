@@ -17,6 +17,8 @@ class PublishCommand extends Command
     public function __construct(DocumentManager $documentManager)
     {
         $this->dm = $documentManager;
+
+        parent::__construct();
     }
 
     protected function configure(): void
