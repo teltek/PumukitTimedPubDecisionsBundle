@@ -6,10 +6,16 @@ services:
     bind:
       $scrollListByTag: '%scroll_list_bytag%'
       $columnsObjsByTag: '%columns_objs_bytag%'
+      $locales: "%pumukit.locales%"
 
   Pumukit\TimedPubDecisionsBundle\Controller\:
     resource: '../../Controller'
     tags: ['controller.service_arguments']
+
+
+  Pumukit\TimedPubDecisionsBundle\Command\:
+    resource: '../../Command/'
+    tags: ['console.command']
 
   Pumukit\TimedPubDecisionsBundle\EventListener\BackofficeListener:
     class: Pumukit\TimedPubDecisionsBundle\EventListener\BackofficeListener

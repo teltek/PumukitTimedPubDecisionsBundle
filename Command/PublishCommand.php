@@ -1,17 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pumukit\TimedPubDecisionsBundle\Command;
 
+use Doctrine\ODM\MongoDB\DocumentManager;
 use Pumukit\SchemaBundle\Document\MultimediaObject;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class PublishCommand extends ContainerAwareCommand
+class PublishCommand extends Command
 {
     private $dm;
 
-    protected function configure()
+    public function __construct(DocumentManager $documentManager)
+    {
+        $this->dm = $documentManager;
+    }
+
+    protected function configure(): void
     {
         $this->setName('timedpubdecisions:publish:objects')
             ->setDescription(
@@ -34,8 +42,6 @@ EOT
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->dm = $this->getContainer()->get('doctrine_mongodb')->getManager();
-
         $timedCode = 'PUDERADIO';
         $this->updateMultimediaObjects($output, $timedCode);
 
@@ -45,7 +51,7 @@ EOT
 
     protected function updateMultimediaObjects(OutputInterface $output, $timedCode)
     {
-        $repo = $this->dm->getRepository('PumukitSchemaBundle:MultimediaObject');
+        $repo = $this->dm->getRepository(MultimediaObject::class);
         $status = [MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN];
 
         $tagCodes = [$timedCode];
