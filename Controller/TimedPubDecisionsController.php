@@ -54,7 +54,7 @@ class TimedPubDecisionsController extends AbstractController implements WebTVCon
     /**
      * @Route("/destacados/{tagCod}/", name="pumukit_timed_pub_decisions_by_tag")
      *
-     * @ParamConverter("tag", class="PumukitSchemaBundle:Tag", options={"mapping": {"tagCod": "cod"}})
+     * @ParamConverter("tag", options={"mapping": {"tagCod": "cod"}})
      */
     public function temporizedByTagAction(Tag $tag): Response
     {

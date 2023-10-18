@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pumukit\TimedPubDecisionsBundle\EventListener;
 
 use Pumukit\NewAdminBundle\Event\PublicationSubmitEvent;
+use Pumukit\SchemaBundle\Document\Tag;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class BackofficeListener
@@ -25,7 +26,7 @@ class BackofficeListener
         if ($request->request->has('pub_decisions')) {
             $pubDecisions = $request->request->get('pub_decisions');
 
-            $tags = $dm->getRepository('PumukitSchemaBundle:Tag')->findBy(['properties.route' => ['$exists' => true]]);
+            $tags = $dm->getRepository(Tag::class)->findBy(['properties.route' => ['$exists' => true]]);
             foreach ($tags as $tag) {
                 if (array_key_exists($tag->getCod(), $pubDecisions)) {
                     $key = $tag->getCod();
