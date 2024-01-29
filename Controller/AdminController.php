@@ -28,7 +28,7 @@ class AdminController extends AbstractController
             [
                 'tag' => $pub,
                 'multimediaObject' => $multimediaObject,
-                'hasTag' => $hasTag]
+                'hasTag' => $hasTag, ]
         );
     }
 }
