@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Pumukit\TimedPubDecisionsBundle\Controller;
 
+use Doctrine\ODM\MongoDB\DocumentManager;
 use Pumukit\NewAdminBundle\Controller\NewAdminControllerInterface;
 use Pumukit\SchemaBundle\Document\MultimediaObject;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -20,11 +21,15 @@ class BackofficeTimeframesController extends AbstractController implements NewAd
         'PUDERADIO' => '#0000FF',
         'PUDETV' => '#50AA50',
     ];
+    private $documentManager;
 
     private $router;
 
-    public function __construct(RouterInterface $router)
-    {
+    public function __construct(
+        RouterInterface $router,
+        DocumentManager $documentManager
+    ) {
+        $this->documentManager = $documentManager;
         $this->router = $router;
     }
 
@@ -82,11 +87,7 @@ class BackofficeTimeframesController extends AbstractController implements NewAd
             $targetTags = self::$tags;
         }
 
-        $qb = $this->get('doctrine_mongodb')
-            ->getManager()
-            ->getRepository(MultimediaObject::class)
-            ->createQueryBuilder()
-        ;
+        $qb = $this->documentManager->createQueryBuilder(MultimediaObject::class);
 
         $qb->field('status')->in($status)->field('tags.cod')->in($targetTags);
 
