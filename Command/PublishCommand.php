@@ -81,7 +81,7 @@ EOT
             $mm->setStatus(MultimediaObject::STATUS_PUBLISHED);
             $this->dm->flush();
 
-            $event = new MultimediaObjectEvent($multimediaObject);
+            $event = new MultimediaObjectEvent($mm);
             $this->eventDispatcher->dispatch($event, SchemaEvents::MULTIMEDIAOBJECT_UPDATE);
             $output->writeln(sprintf('Updated '.$timedCode.' mm: %s', $mm->getId()));
         }
