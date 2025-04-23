@@ -62,7 +62,10 @@ class TimedPubDecisionsController extends AbstractController implements WebTVCon
             throw new \Exception($this->translator->trans('This tag is not a temporized publication decision'));
         }
 
-        $multimediaObjects = $this->documentManager->getRepository(MultimediaObject::class)->findBy(['tags.cod' => $tag->getCod()]);
+        $multimediaObjects = $this->documentManager->getRepository(MultimediaObject::class)->findBy(
+            ['tags.cod' => $tag->getCod()],
+            ['record_date' => 'desc']
+        );
 
         $mmoGroupBy = [];
         foreach ($multimediaObjects as $multimediaObject) {
