@@ -113,39 +113,89 @@ class BackofficeTimeframesController extends AbstractController implements NewAd
                 ]
             );
         }
-        $mms = $qb->getQuery()->execute();
+
+        $qb->sort('_id', 'asc');
 
         $XML = new \SimpleXMLElement('<data></data>');
         $XML->addAttribute('wiki-url', $request->getUri());
         $XML->addAttribute('wiki-section', 'Pumukit time-line Feed');
 
-        foreach ($mms as $mm) {
-            foreach ($targetTags as $tag) {
-                if (!$mm->containsTagWithCod($tag)) {
-                    continue;
+        $batchSize = 500;
+        $skip = 0;
+
+        do {
+            $batchQb = clone $qb;
+
+            $batchQb
+                ->skip($skip)
+                ->limit($batchSize)
+            ;
+
+            $mms = $batchQb->getQuery()->execute();
+            $processed = 0;
+
+            foreach ($mms as $mm) {
+                ++$processed;
+
+                foreach ($targetTags as $tag) {
+                    if (!$mm->containsTagWithCod($tag)) {
+                        continue;
+                    }
+
+                    $XMLMms = $XML->addChild(
+                        'event',
+                        htmlspecialchars($mm->getTitle())
+                    );
+
+                    $XMLMms->addAttribute('durationEvent', 'true');
+
+                    if ($mm->getProperty('temporized_'.$tag)) {
+                        $start = date(
+                            'Y-m-d H:i:s',
+                            strtotime($mm->getProperty('temporized_from_'.$tag))
+                        );
+
+                        $end = date(
+                            'Y-m-d H:i:s',
+                            strtotime($mm->getProperty('temporized_to_'.$tag))
+                        );
+
+                        $XMLMms->addAttribute('start', $start);
+                        $XMLMms->addAttribute('end', $end);
+                    } else {
+                        $XMLMms->addAttribute('start', $twoMonthsBefore);
+                        $XMLMms->addAttribute('end', $twoMonthsAfter);
+                        $XMLMms->addAttribute('latestStart', $twoHoursBefore);
+                        $XMLMms->addAttribute('earliestEnd', $twoHoursAfter);
+                    }
+
+                    $XMLMms->addAttribute(
+                        'color',
+                        self::$colors[$tag] ?? '#666666'
+                    );
+
+                    $XMLMms->addAttribute('textColor', '#000000');
+                    $XMLMms->addAttribute('title', $mm->getTitle());
+
+                    $XMLMms->addAttribute(
+                        'link',
+                        $this->router->generate(
+                            'pumukitnewadmin_mms_shortener',
+                            ['id' => $mm->getId()],
+                            1
+                        )
+                    );
                 }
 
-                $XMLMms = $XML->addChild('event', htmlspecialchars($mm->getTitle()));
-                $XMLMms->addAttribute('durationEvent', 'true');
-
-                if ($mm->getProperty('temporized_'.$tag)) {
-                    $start = date('Y-m-d H:i:s', strtotime($mm->getProperty('temporized_from_'.$tag)));
-                    $end = date('Y-m-d H:i:s', strtotime($mm->getProperty('temporized_to_'.$tag)));
-                    $XMLMms->addAttribute('start', $start);
-                    $XMLMms->addAttribute('end', $end);
-                } else {
-                    $XMLMms->addAttribute('start', $twoMonthsBefore);
-                    $XMLMms->addAttribute('end', $twoMonthsAfter);
-                    $XMLMms->addAttribute('latestStart', $twoHoursBefore);
-                    $XMLMms->addAttribute('earliestEnd', $twoHoursAfter);
-                }
-
-                $XMLMms->addAttribute('color', self::$colors[$tag] ?? '#666666');
-                $XMLMms->addAttribute('textColor', '#000000');
-                $XMLMms->addAttribute('title', $mm->getTitle());
-                $XMLMms->addAttribute('link', $this->router->generate('pumukitnewadmin_mms_shortener', ['id' => $mm->getId()], 1));
+                $this->documentManager->detach($mm);
             }
-        }
+
+            $skip += $processed;
+
+            unset($mms, $batchQb);
+
+            gc_collect_cycles();
+        } while ($processed === $batchSize);
 
         return new Response($XML->asXML(), 200, ['Content-Type' => 'text/xml']);
     }
