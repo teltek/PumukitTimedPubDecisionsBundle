@@ -42,7 +42,7 @@ EOT
         );
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $parentTag = $this->dm->getRepository(Tag::class)->findOneBy(['cod' => 'PUBDECISIONS']);
         if (!$parentTag) {
@@ -58,7 +58,7 @@ EOT
             $this->addTags($parentTag, $output);
         }
 
-        return 0;
+        return Command::SUCCESS;
     }
 
     private function checkTags($output)

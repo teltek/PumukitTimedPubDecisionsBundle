@@ -1,4 +1,4 @@
-name: Code validation
+Puedname: Code validation
 
 on: [push, pull_request]
 

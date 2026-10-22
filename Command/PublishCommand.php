@@ -47,7 +47,7 @@ EOT
         ;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $timedCode = 'PUDERADIO';
         $this->updateMultimediaObjects($output, $timedCode);
@@ -55,7 +55,7 @@ EOT
         $timedCode = 'PUDETV';
         $this->updateMultimediaObjects($output, $timedCode);
 
-        return 0;
+        return Command::SUCCESS;
     }
 
     protected function updateMultimediaObjects(OutputInterface $output, $timedCode)

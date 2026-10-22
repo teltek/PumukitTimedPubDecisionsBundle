@@ -3,11 +3,16 @@
 {% block stylesheets %}
     {{ parent() }}
     <link rel="stylesheet" type="text/css" media="screen" href="{{ asset('/bundles/pumukitnewadmin/css/admin/dashboard.css') }}"/>
+    <style>
+        #timeframes-chart-wrap { position: relative; height: calc(100vh - 350px); }
+    </style>
 {% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
-    <script type="text/javascript" src="{{ asset('/bundles/pumukitnewadmin/js/timeline_2.3.1/timeline_js/timeline-api.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('/bundles/pumukitnewadmin/vendor/chartjs/chart.umd.min.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('/bundles/pumukitnewadmin/vendor/chartjs/chartjs-adapter-date-fns.bundle.min.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('/bundles/pumukitnewadmin/vendor/chartjs/chartjs-plugin-zoom.min.js') }}"></script>
 {% endblock %}
 
 {% block body %}
@@ -27,7 +32,7 @@
                             <div style="white-space: nowrap; font-weight:bold;">&nbsp;Destacados
                                 <span style="color:{{ colors['PUDERADIO'] }}">Radio</span> /
                                 <span style="color:{{ colors['PUDETV'] }}">TV</span></div>
-                            <select name="tags" onchange="Javascript:this.form.submit();">
+                            <select name="tags" onchange="this.form.submit();">
                                 <option value="">Todos</option>
                                 <option value="PUDERADIO" {% if app.session.get('pumukit_timed_pub_decisions.tags') == 'PUDERADIO' %}selected="selected"{% endif %}>
                                     Destacados Radio
@@ -41,7 +46,7 @@
                     <div class="col-md-3 col-md-offset-1">
                         <div id="select-estado">
                             <div style="font-weight:bold;">&nbsp;Estado</div>
-                            <select name="status" onchange="Javascript:this.form.submit();">
+                            <select name="status" onchange="this.form.submit();">
                                 <option value="">Todos</option>
                                 <option value="0" {% if app.session.get('pumukit_timed_pub_decisions.status') == '0' %}selected="selected"{% endif %}>
                                     Publicado
@@ -57,124 +62,147 @@
                     </div>
                 </form>
             </div>
-            {# TODO
-                    <div id="contenedor-checkbox-destacados" style="float:left;">
-                      <div>&nbsp;</div>
-                      <div style="height:20px;float:left; ">
-                        <input type='hidden' value='0' name='incluye_fijas'><?php // para forzar que envíe 0 cuando el checkbox está inactivo?>
-                        <input type="checkbox" name="incluye_fijas" id="incluye_fijas" value="1" style="margin:5px 3px;" onchange="Javascript:this.form.submit();" />
-                      </div>
-                      <div style="float:left;font-weight:bold;margin-top:5px;">Incluir <span style="border-top: 3px solid #CFDEEA;">decisiones editoriales fijas</span></div>
-                    </div>
-                    <div id="contenedor-checkbox-publicados" style="float:left;">
-                      <div>&nbsp;</div>
-                      <div style="height:20px;float:left; ">
-                        <input type='hidden' value='0' name='incluye_en_proceso'><?php // para forzar que envíe 0 cuando el checkbox está inactivo?>
-                        <input type="checkbox" name="incluye_en_proceso" id="incluye_en_proceso" value="1" style="margin:5px 3px 5px 20px;" onchange="Javascript:this.form.submit();" />
-                      </div>
-                      <div style="float:left;font-weight:bold;margin-top:5px;">Incluir piezas no publicadas o en proceso</div>
-                    </div>
-            #}
+
+            <div class="col-md-3 text-right">
+                <a href="javascript:void(0);" id="btn-centra-hoy">{% trans %}Center on today{% endtrans %}</a>
+            </div>
         </div>
-
-        <div class="col-md-3 text-right"><a href="javascript:centraTimeline();">Centrar hoy</a></div>
-
     </div>
 
-
     <div class="text-center well">
-
-
-        <div id="my-timeline" style="height: calc(100vh - 350px); border: 1px solid #aaa"></div>
-        <br/>
-        <br/>
+        <div id="timeframes-chart-wrap">
+            <canvas id="timeframes-chart"></canvas>
+        </div>
         <noscript>
             {% trans %}This page uses Javascript to show you a Timeline.{% endtrans %}
             {% trans %}Please enable Javascript in your browser to see the full page.{% endtrans %}
-            {% trans %}Thank you.{% endtrans %}
         </noscript>
     </div>
 
     <script type="text/javascript">
-
-        $(function () {
-
-
-            var eventSource = new Timeline.DefaultEventSource();
-            var bandInfos = [
-                Timeline.createBandInfo({
-                    eventSource: eventSource,
-                    timeZone: 1,
-                    width: '85%',
-                    intervalUnit: Timeline.DateTime.DAY,
-                    intervalPixels: 80
-                }),
-                Timeline.createBandInfo({
-                    eventSource: eventSource,
-                    timeZone: 1,
-                    overview: true,
-                    width: '15%',
-                    intervalUnit: Timeline.DateTime.MONTH,
-                    intervalPixels: 200
-                })
-            ];
-
-            bandInfos[1].syncWith = 0;
-            bandInfos[1].highlight = true;
-
-            tl = Timeline.create(document.getElementById('my-timeline'), bandInfos);
-            tl.loadXML('{{ path('pumukit_newadmin_timeframes_xml') }}' + window.location.search, function (xml, url) {
-                eventSource.loadXML(xml, url);
-            });
-
-        });
-
-
-        function centraTimeline() {
-            tl.getBand(0).scrollToCenter(new Date());
-        }
-
-
-
-        {# Sobrecargo la función que pinta la burbuja y sólo pinto el título y la fecha traducida al español #}
-        var oldFillInfoBubble = Timeline.DefaultEventSource.Event.prototype.fillInfoBubble;
-        var weekday = new Array("Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado");
-        var monthname = new Array("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre");
-        Timeline.DefaultEventSource.Event.prototype.fillInfoBubble = function (elmt, theme, labeller) {
-            var eventObject = this;
-            if (eventObject._end != eventObject._earliestEnd && eventObject._start != eventObject._latestStart) {
-                var div_title = document.createElement("div");
-                div_title.className = "timeline-event-bubble-title";
-                var a_title = document.createElement("a");
-                a_title.setAttribute('href', eventObject._link);
-                a_title.innerHTML = eventObject._text;
-                div_title.appendChild(a_title);
-                var div_time = document.createElement("div");
-                div_time.className = "timeline-event-bubble-time";
-                div_time.innerText = "Decisión editorial permanente";
-                elmt.appendChild(div_title);
-                elmt.appendChild(div_time);
-            } else {
-                // oldFillInfoBubble.call(this, elmt, theme, labeller); // antigua función para crear el html de la burbuja
-                var start = new Date(eventObject._start);
-                var start_es = weekday[start.getDay()] + " " + start.getDate() + " de " + monthname[start.getMonth()] + " de " + start.getFullYear() + " " + start.toLocaleTimeString();
-                var end = new Date(eventObject._end);
-                var end_es = weekday[end.getDay()] + " " + end.getDate() + " de " + monthname[end.getMonth()] + " de " + end.getFullYear() + " " + end.toLocaleTimeString();
-                var div_title = document.createElement("div");
-                div_title.className = "timeline-event-bubble-title";
-                var a_title = document.createElement("a");
-                a_title.setAttribute('href', eventObject._link);
-                a_title.innerHTML = eventObject._text;
-                div_title.appendChild(a_title);
-                var div_time = document.createElement("div");
-                div_time.className = "timeline-event-bubble-time";
-                div_time.innerText = start_es + "\n" + end_es;
-                elmt.appendChild(div_title);
-                elmt.appendChild(div_time);
+        (function () {
+            const dataUrl = '{{ path('pumukit_newadmin_timeframes_json') }}' + window.location.search;
+            const canvas = document.getElementById('timeframes-chart');
+            if (!canvas) {
+                return;
             }
-        }
-    </script>
-    <br/>
-    <br/>
 
+            const now = new Date();
+            const monthMs = 30 * 24 * 60 * 60 * 1000;
+            const initialMin = new Date(now.getTime() - monthMs);
+            const initialMax = new Date(now.getTime() + monthMs);
+
+            let chart = null;
+
+            function buildDataset(events) {
+                return events.map(function (e, idx) {
+                    return {
+                        x: [e.start, e.end],
+                        y: idx,
+                        title: e.title,
+                        tag: e.tag,
+                        link: e.link,
+                        permanent: e.permanent,
+                        backgroundColor: e.color,
+                        borderColor: e.color,
+                    };
+                });
+            }
+
+            function render(events) {
+                const data = buildDataset(events);
+                const labels = events.map(function (e) { return e.title; });
+
+                chart = new Chart(canvas.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        datasets: [{
+                            label: '{{ 'Timeframes'|trans|e('js') }}',
+                            data: data,
+                            backgroundColor: data.map(function (d) { return d.backgroundColor; }),
+                            borderColor: data.map(function (d) { return d.borderColor; }),
+                            borderWidth: 1,
+                            borderSkipped: false,
+                            barPercentage: 0.7,
+                        }],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        scales: {
+                            x: {
+                                type: 'time',
+                                min: initialMin,
+                                max: initialMax,
+                                time: { unit: 'day' },
+                            },
+                            y: {
+                                ticks: {
+                                    callback: function (value) {
+                                        const label = labels[value];
+                                        if (!label) return '';
+                                        return label.length > 40 ? label.slice(0, 37) + '…' : label;
+                                    },
+                                    autoSkip: false,
+                                },
+                            },
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: function (items) {
+                                        return items[0].raw.title;
+                                    },
+                                    label: function (ctx) {
+                                        if (ctx.raw.permanent) {
+                                            return '{{ 'Permanent editorial decision'|trans|e('js') }} · ' + ctx.raw.tag;
+                                        }
+                                        const start = new Date(ctx.raw.x[0]).toLocaleString();
+                                        const end = new Date(ctx.raw.x[1]).toLocaleString();
+                                        return start + ' → ' + end + ' · ' + ctx.raw.tag;
+                                    },
+                                },
+                            },
+                            zoom: {
+                                pan: { enabled: true, mode: 'x' },
+                                zoom: {
+                                    wheel: { enabled: true },
+                                    pinch: { enabled: true },
+                                    mode: 'x',
+                                },
+                            },
+                        },
+                        onClick: function (evt, elements) {
+                            if (!elements.length) return;
+                            const el = elements[0];
+                            const item = chart.data.datasets[el.datasetIndex].data[el.index];
+                            if (item && item.link) {
+                                window.open(item.link, '_blank');
+                            }
+                        },
+                    },
+                });
+            }
+
+            fetch(dataUrl, { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (payload) {
+                    render(payload.events || []);
+                })
+                .catch(function (err) {
+                    canvas.parentNode.innerHTML = '<p class="text-danger">{{ 'Could not load timeline data.'|trans|e('js') }}</p>';
+                    console.error(err);
+                });
+
+            document.getElementById('btn-centra-hoy').addEventListener('click', function () {
+                if (!chart) return;
+                const ref = new Date();
+                chart.options.scales.x.min = new Date(ref.getTime() - monthMs);
+                chart.options.scales.x.max = new Date(ref.getTime() + monthMs);
+                chart.update();
+            });
+        })();
+    </script>
 {% endblock %}

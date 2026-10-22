@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Pumukit\TimedPubDecisionsBundle\Controller;
 
+use Doctrine\Bundle\MongoDBBundle\Attribute\MapDocument;
 use Doctrine\ODM\MongoDB\DocumentManager;
 use Pumukit\CoreBundle\Controller\WebTVControllerInterface;
 use Pumukit\SchemaBundle\Document\MultimediaObject;
 use Pumukit\SchemaBundle\Document\Tag;
 use Pumukit\WebTVBundle\Services\BreadcrumbsService;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 class TimedPubDecisionsController extends AbstractController implements WebTVControllerInterface
@@ -38,9 +38,7 @@ class TimedPubDecisionsController extends AbstractController implements WebTVCon
         $this->columnsObjsByTag = $columnsObjsByTag;
     }
 
-    /**
-     * @Route("/destacados/menu/", name="pumukit_timed_pub_decisions_menu")
-     */
+    #[Route('/destacados/menu/', name: 'pumukit_timed_pub_decisions_menu')]
     public function menuTemporizedAction(): Response
     {
         $tags = [];
@@ -51,12 +49,8 @@ class TimedPubDecisionsController extends AbstractController implements WebTVCon
         return $this->render('@PumukitTimedPubDecisions/menu/links.html.twig', ['temporizedChannels' => $tags]);
     }
 
-    /**
-     * @Route("/destacados/{tagCod}/", name="pumukit_timed_pub_decisions_by_tag")
-     *
-     * @ParamConverter("tag", options={"mapping": {"tagCod": "cod"}})
-     */
-    public function temporizedByTagAction(Tag $tag): Response
+    #[Route('/destacados/{tagCod}/', name: 'pumukit_timed_pub_decisions_by_tag')]
+    public function temporizedByTagAction(#[MapDocument(mapping: ['tagCod' => 'cod'])] Tag $tag): Response
     {
         if (!in_array($tag->getCod(), $this->temporizedChannels)) {
             throw new \Exception($this->translator->trans('This tag is not a temporized publication decision'));
