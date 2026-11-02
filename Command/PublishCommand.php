@@ -8,32 +8,24 @@ use Doctrine\ODM\MongoDB\DocumentManager;
 use Pumukit\SchemaBundle\Document\MultimediaObject;
 use Pumukit\SchemaBundle\Event\MultimediaObjectEvent;
 use Pumukit\SchemaBundle\Event\SchemaEvents;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
+#[AsCommand(name: 'timedpubdecisions:publish:objects', description: 'Publish multimedia objects with a temporal decision')]
 class PublishCommand extends Command
 {
-    private $dm;
-    private $eventDispatcher;
-
-    public function __construct(DocumentManager $documentManager, EventDispatcherInterface $eventDispatcher)
+    public function __construct(private readonly DocumentManager $dm, private readonly EventDispatcherInterface $eventDispatcher)
     {
-        $this->dm = $documentManager;
-        $this->eventDispatcher = $eventDispatcher;
-
         parent::__construct();
     }
 
     protected function configure(): void
     {
-        $this->setName('timedpubdecisions:publish:objects')
-            ->setDescription(
-                'Publish multimedia objects with a temporal decision'
-            )
-            ->setHelp(
-                <<<'EOT'
+        $this->setHelp(
+            <<<'EOT'
 
 The <info>timedpubdecisions:publish:objects</info> publish multimedia objects with a temporal decision.
 
@@ -43,8 +35,7 @@ To use in a crontab:
 
 
 EOT
-            )
-        ;
+        );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

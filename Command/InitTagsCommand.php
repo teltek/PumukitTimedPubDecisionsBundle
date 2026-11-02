@@ -6,29 +6,23 @@ namespace Pumukit\TimedPubDecisionsBundle\Command;
 
 use Doctrine\ODM\MongoDB\DocumentManager;
 use Pumukit\SchemaBundle\Document\Tag;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'timedpubdecisions:init:tags', description: 'Load Timed publication decisions tag data fixture to your database')]
 class InitTagsCommand extends Command
 {
-    private $dm;
-    private $languages;
-
-    public function __construct(DocumentManager $documentManager, array $locales)
+    public function __construct(private readonly DocumentManager $dm, private readonly array $locales)
     {
-        $this->dm = $documentManager;
-        $this->languages = $locales;
-
         parent::__construct();
     }
 
     protected function configure(): void
     {
-        $this->setName('timedpubdecisions:init:tags')->setDescription(
-            'Load Timed publication decisions tag data fixture to your database'
-        )->addOption('force', null, InputOption::VALUE_NONE, 'Set this parameter to execute this action')->setHelp(
+        $this->addOption('force', null, InputOption::VALUE_NONE, 'Set this parameter to execute this action')->setHelp(
             <<<'EOT'
 Command to load a controlled Timed publication decisions tags data into a database.
 
@@ -121,7 +115,7 @@ EOT
         $tag->setMetatag($metatag);
         $tag->setDisplay(true);
 
-        foreach ($this->languages as $language) {
+        foreach ($this->locales as $language) {
             $tag->setTitle($title, $language);
         }
 

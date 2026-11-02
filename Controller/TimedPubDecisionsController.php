@@ -17,26 +17,15 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 class TimedPubDecisionsController extends AbstractController implements WebTVControllerInterface
 {
-    private $temporizedChannels = ['PUDETV', 'PUDERADIO'];
-    private $documentManager;
-    private $translator;
-    private $breadcrumbsService;
-    private $scrollListByTag;
-    private $columnsObjsByTag;
+    private array $temporizedChannels = ['PUDETV', 'PUDERADIO'];
 
     public function __construct(
-        DocumentManager $documentManager,
-        TranslatorInterface $translator,
-        BreadcrumbsService $breadcrumbsService,
-        bool $scrollListByTag,
-        int $columnsObjsByTag
-    ) {
-        $this->documentManager = $documentManager;
-        $this->translator = $translator;
-        $this->breadcrumbsService = $breadcrumbsService;
-        $this->scrollListByTag = $scrollListByTag;
-        $this->columnsObjsByTag = $columnsObjsByTag;
-    }
+        private readonly DocumentManager $documentManager,
+        private readonly TranslatorInterface $translator,
+        private readonly BreadcrumbsService $breadcrumbsService,
+        private readonly bool $scrollListByTag,
+        private readonly int $columnsObjsByTag,
+    ) {}
 
     #[Route('/destacados/menu/', name: 'pumukit_timed_pub_decisions_menu')]
     public function menuTemporizedAction(): Response

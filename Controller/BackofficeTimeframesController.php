@@ -23,17 +23,11 @@ class BackofficeTimeframesController extends AbstractController implements NewAd
         'PUDERADIO' => '#0000FF',
         'PUDETV' => '#50AA50',
     ];
-    private $documentManager;
-
-    private $router;
 
     public function __construct(
-        RouterInterface $router,
-        DocumentManager $documentManager
-    ) {
-        $this->documentManager = $documentManager;
-        $this->router = $router;
-    }
+        private readonly RouterInterface $router,
+        private readonly DocumentManager $documentManager,
+    ) {}
 
     #[Route('/admin/timeframes')]
     #[Route('/admin/timeframes/default', name: 'pumukit_newadmin_timeframes_index_default')]
