@@ -14,8 +14,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'timedpubdecisions:publish:objects', description: 'Publish multimedia objects with a temporal decision')]
 class PublishCommand extends Command
 {
-    public function __construct(private readonly TemporizedDecisionService $temporizedDecisionService)
-    {
+    public function __construct(
+        private readonly TemporizedDecisionService $temporizedDecisionService,
+        private readonly bool $isEnabled,
+    ) {
         parent::__construct();
     }
 
@@ -39,6 +41,12 @@ class PublishCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        if (!$this->isEnabled) {
+            $output->writeln('<error>The TimedPubDecisionsBundle is disabled</error>');
+
+            return Command::FAILURE;
+        }
+
         $dryRun = (bool) $input->getOption('dry-run');
         $published = $this->temporizedDecisionService->publishDue(new \DateTimeImmutable(), $dryRun);
 

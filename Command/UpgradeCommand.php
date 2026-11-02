@@ -19,6 +19,7 @@ class UpgradeCommand extends Command
     public function __construct(
         private readonly DocumentManager $documentManager,
         private readonly TemporizedDecisionService $temporizedDecisionService,
+        private readonly bool $isEnabled,
     ) {
         parent::__construct();
     }
@@ -30,6 +31,12 @@ class UpgradeCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        if (!$this->isEnabled) {
+            $output->writeln('<error>The TimedPubDecisionsBundle is disabled</error>');
+
+            return Command::FAILURE;
+        }
+
         $dryRun = (bool) $input->getOption('dry-run');
         $now = new \DateTimeImmutable();
         $codes = $this->temporizedDecisionService->tagCodes();

@@ -1,208 +1,100 @@
 {% extends '@PumukitNewAdmin/layout.html.twig' %}
 
-{% block stylesheets %}
-    {{ parent() }}
-    <link rel="stylesheet" type="text/css" media="screen" href="{{ asset('/bundles/pumukitnewadmin/css/admin/dashboard.css') }}"/>
-    <style>
-        #timeframes-chart-wrap { position: relative; height: calc(100vh - 350px); }
-    </style>
-{% endblock %}
-
-{% block javascripts %}
-    {{ parent() }}
-    <script type="text/javascript" src="{{ asset('/bundles/pumukitnewadmin/vendor/chartjs/chart.umd.min.js') }}"></script>
-    <script type="text/javascript" src="{{ asset('/bundles/pumukitnewadmin/vendor/chartjs/chartjs-adapter-date-fns.bundle.min.js') }}"></script>
-    <script type="text/javascript" src="{{ asset('/bundles/pumukitnewadmin/vendor/chartjs/chartjs-plugin-zoom.min.js') }}"></script>
-{% endblock %}
+{% set palette = ['primary', 'success', 'warning', 'info', 'danger', 'secondary'] %}
+{% set statusNames = {0: 'Published', 1: 'Blocked', 2: 'Hidden'} %}
+{% set statusLabels = {published: 'Published', unpublished: 'Not published', all: 'All', processing: 'All, including in process'} %}
+{% set filters = {tag: tag, status: status} %}
+{% set colors = {} %}
+{% for code in codes %}
+    {% set colors = colors|merge({(code): palette[loop.index0 % palette|length]}) %}
+{% endfor %}
 
 {% block body %}
-    <h1>{% trans %}Timed Publishing Decisions Timeframes{% endtrans %}</h1>
+    <link rel="stylesheet" href="{{ asset('@pumukit/timed-pub-decisions/styles/timeline.css') }}">
 
-    <div class="well">
-        <div class="row">
-            <div id="leyenda" class="col-md-3">
-                <div style="color: {{ colors['PUDERADIO'] }}; border-top: 3px solid;">Destacados Radio</div>
-                <div style="color: {{ colors['PUDETV'] }}; border-top: 3px solid;">Destacados TV</div>
-            </div>
+    <h3 class="cab_body_div">
+        <ul class="breadcrumb pmk-margin-bottom-5">
+            <li class="breadcrumb-item active">{% trans %}Timed Publishing Decisions Timeframes{% endtrans %}</li>
+        </ul>
+    </h3>
 
-            <div id="timeframes-dashboard-select" class="col-md-6">
-                <form id="form-destacados" name="form-destacados" method="get" action="#">
-                    <div class="col-md-3">
-                        <div id="select-destacados" style="float:left;">
-                            <div style="white-space: nowrap; font-weight:bold;">&nbsp;Destacados
-                                <span style="color:{{ colors['PUDERADIO'] }}">Radio</span> /
-                                <span style="color:{{ colors['PUDETV'] }}">TV</span></div>
-                            <select name="tags" onchange="this.form.submit();">
-                                <option value="">Todos</option>
-                                <option value="PUDERADIO" {% if app.session.get('pumukit_timed_pub_decisions.tags') == 'PUDERADIO' %}selected="selected"{% endif %}>
-                                    Destacados Radio
-                                </option>
-                                <option value="PUDETV" {% if app.session.get('pumukit_timed_pub_decisions.tags') == 'PUDETV' %}selected="selected"{% endif %}>
-                                    Destacados TV
-                                </option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-3 col-md-offset-1">
-                        <div id="select-estado">
-                            <div style="font-weight:bold;">&nbsp;Estado</div>
-                            <select name="status" onchange="this.form.submit();">
-                                <option value="">Todos</option>
-                                <option value="0" {% if app.session.get('pumukit_timed_pub_decisions.status') == '0' %}selected="selected"{% endif %}>
-                                    Publicado
-                                </option>
-                                <option value="1" {% if app.session.get('pumukit_timed_pub_decisions.status') == '1' %}selected="selected"{% endif %}>
-                                    No publicado
-                                </option>
-                                <option value="-1" {% if app.session.get('pumukit_timed_pub_decisions.status') == '-1' %}selected="selected"{% endif %}>
-                                    Todos incluidos en proceso
-                                </option>
-                            </select>
-                        </div>
-                    </div>
-                </form>
-            </div>
-
-            <div class="col-md-3 text-right">
-                <a href="javascript:void(0);" id="btn-centra-hoy">{% trans %}Center on today{% endtrans %}</a>
+    <div class="pmk-well" data-controller="timed-pub-decisions--timeline"
+         data-timed-pub-decisions--timeline-start-value="{{ start|date('Y-m-d\\TH:i') }}"
+         data-timed-pub-decisions--timeline-end-value="{{ end|date('Y-m-d\\TH:i') }}">
+        <div class="d-flex flex-wrap align-items-end gap-3 mb-3">
+            <form class="d-flex flex-wrap align-items-end gap-2" method="get" action="{{ path('pumukit_newadmin_timeframes_index_default') }}" data-action="change->timed-pub-decisions--timeline#filter">
+                <input type="hidden" name="start" value="{{ start|date('Y-m-d') }}">
+                <div>
+                    <label class="form-label small mb-0" for="tpd-tag">{% trans %}Decision{% endtrans %}</label>
+                    <select class="form-select form-select-sm" id="tpd-tag" name="tag">
+                        <option value="">{% trans %}All{% endtrans %}</option>
+                        {% for code in codes %}
+                            <option value="{{ code }}" {{ code == tag ? 'selected' }}>{{ code }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label small mb-0" for="tpd-status">{% trans %}Status{% endtrans %}</label>
+                    <select class="form-select form-select-sm" id="tpd-status" name="status">
+                        {% for value in statuses %}
+                            <option value="{{ value }}" {{ value == status ? 'selected' }}>{{ statusLabels[value]|trans }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <noscript><button type="submit" class="btn btn-sm btn-pumukit">{% trans %}Filter{% endtrans %}</button></noscript>
+            </form>
+            <div class="btn-group btn-group-sm ms-md-auto" role="group" aria-label="{% trans %}Period{% endtrans %}">
+                <a class="btn btn-outline-secondary" href="{{ path('pumukit_newadmin_timeframes_index_default', filters|merge({start: previous|date('Y-m-d')})) }}" title="{% trans %}Previous{% endtrans %}"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></a>
+                <a class="btn btn-outline-secondary" href="{{ path('pumukit_newadmin_timeframes_index_default', filters) }}">{% trans %}Today{% endtrans %}</a>
+                <a class="btn btn-outline-secondary" href="{{ path('pumukit_newadmin_timeframes_index_default', filters|merge({start: next|date('Y-m-d')})) }}" title="{% trans %}Next{% endtrans %}"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></a>
             </div>
         </div>
-    </div>
 
-    <div class="text-center well">
-        <div id="timeframes-chart-wrap">
-            <canvas id="timeframes-chart"></canvas>
+        <div class="d-flex flex-wrap gap-3 small mb-2">
+            {% for code in codes %}
+                <span><span class="tpd-swatch bg-{{ colors[code] }}"></span> {{ code }}</span>
+            {% endfor %}
+            <span><span class="tpd-swatch tpd-permanent"></span> {% trans %}Permanent{% endtrans %}</span>
+            <span class="text-body-secondary">{{ start|date('d/m/Y') }} – {{ end|date('d/m/Y') }}</span>
         </div>
-        <noscript>
-            {% trans %}This page uses Javascript to show you a Timeline.{% endtrans %}
-            {% trans %}Please enable Javascript in your browser to see the full page.{% endtrans %}
-        </noscript>
+
+        {% if rows is empty %}
+            <div class="alert alert-info mb-0">{% trans %}There are no temporized decisions in this period.{% endtrans %}</div>
+        {% else %}
+            <div class="tpd-timeline">
+                <div class="tpd-row tpd-header">
+                    <div class="tpd-label small text-body-secondary">{% trans %}Video{% endtrans %}</div>
+                    <div class="tpd-track">
+                        {% for month in months %}
+                            <span class="tpd-month" data-timed-pub-decisions--timeline-target="mark" data-date="{{ month|date('Y-m-d\\TH:i') }}">{{ month|date('m/Y') }}</span>
+                        {% endfor %}
+                        <span class="tpd-today" data-timed-pub-decisions--timeline-target="mark" data-date="{{ today|date('Y-m-d\\TH:i') }}" title="{% trans %}Today{% endtrans %}"></span>
+                    </div>
+                </div>
+                {% for row in rows %}
+                    {% set color = colors[row.code] %}
+                    <div class="tpd-row">
+                        <div class="tpd-label">
+                            <a href="{{ path('pumukitnewadmin_mms_shortener', {'id': row.id}) }}" target="_blank" class="text-truncate d-block" title="{{ row.title }}">{{ row.title }}</a>
+                            <span class="badge text-bg-{{ color }}">{{ row.code }}</span>
+                            <span class="badge text-bg-light border">{{ statusNames[row.status]|default(row.status)|trans }}</span>
+                            {% if row.permanent %}
+                                <span class="small text-body-secondary">{% trans %}Permanent{% endtrans %}</span>
+                            {% else %}
+                                <span class="small font-monospace">{{ row.from|replace({'T': ' '}) }} → {{ row.to|replace({'T': ' '}) }}</span>
+                                {% if row.applied %}<i class="fa-solid fa-circle-check text-success" title="{{ 'Start applied on %date%'|trans({'%date%': row.applied|replace({'T': ' '})}) }}"></i>{% endif %}
+                            {% endif %}
+                        </div>
+                        <div class="tpd-track">
+                            {% if row.permanent %}
+                                <span class="tpd-bar tpd-permanent tpd-bar-whole"></span>
+                            {% else %}
+                                <span class="tpd-bar bg-{{ color }}" data-timed-pub-decisions--timeline-target="bar" data-from="{{ row.from }}" data-to="{{ row.to }}" title="{{ row.from|replace({'T': ' '}) }} → {{ row.to|replace({'T': ' '}) }}"></span>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
     </div>
-
-    <script type="text/javascript">
-        (function () {
-            const dataUrl = '{{ path('pumukit_newadmin_timeframes_json') }}' + window.location.search;
-            const canvas = document.getElementById('timeframes-chart');
-            if (!canvas) {
-                return;
-            }
-
-            const now = new Date();
-            const monthMs = 30 * 24 * 60 * 60 * 1000;
-            const initialMin = new Date(now.getTime() - monthMs);
-            const initialMax = new Date(now.getTime() + monthMs);
-
-            let chart = null;
-
-            function buildDataset(events) {
-                return events.map(function (e, idx) {
-                    return {
-                        x: [e.start, e.end],
-                        y: idx,
-                        title: e.title,
-                        tag: e.tag,
-                        link: e.link,
-                        permanent: e.permanent,
-                        backgroundColor: e.color,
-                        borderColor: e.color,
-                    };
-                });
-            }
-
-            function render(events) {
-                const data = buildDataset(events);
-                const labels = events.map(function (e) { return e.title; });
-
-                chart = new Chart(canvas.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        datasets: [{
-                            label: '{{ 'Timeframes'|trans|e('js') }}',
-                            data: data,
-                            backgroundColor: data.map(function (d) { return d.backgroundColor; }),
-                            borderColor: data.map(function (d) { return d.borderColor; }),
-                            borderWidth: 1,
-                            borderSkipped: false,
-                            barPercentage: 0.7,
-                        }],
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        indexAxis: 'y',
-                        scales: {
-                            x: {
-                                type: 'time',
-                                min: initialMin,
-                                max: initialMax,
-                                time: { unit: 'day' },
-                            },
-                            y: {
-                                ticks: {
-                                    callback: function (value) {
-                                        const label = labels[value];
-                                        if (!label) return '';
-                                        return label.length > 40 ? label.slice(0, 37) + '…' : label;
-                                    },
-                                    autoSkip: false,
-                                },
-                            },
-                        },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    title: function (items) {
-                                        return items[0].raw.title;
-                                    },
-                                    label: function (ctx) {
-                                        if (ctx.raw.permanent) {
-                                            return '{{ 'Permanent editorial decision'|trans|e('js') }} · ' + ctx.raw.tag;
-                                        }
-                                        const start = new Date(ctx.raw.x[0]).toLocaleString();
-                                        const end = new Date(ctx.raw.x[1]).toLocaleString();
-                                        return start + ' → ' + end + ' · ' + ctx.raw.tag;
-                                    },
-                                },
-                            },
-                            zoom: {
-                                pan: { enabled: true, mode: 'x' },
-                                zoom: {
-                                    wheel: { enabled: true },
-                                    pinch: { enabled: true },
-                                    mode: 'x',
-                                },
-                            },
-                        },
-                        onClick: function (evt, elements) {
-                            if (!elements.length) return;
-                            const el = elements[0];
-                            const item = chart.data.datasets[el.datasetIndex].data[el.index];
-                            if (item && item.link) {
-                                window.open(item.link, '_blank');
-                            }
-                        },
-                    },
-                });
-            }
-
-            fetch(dataUrl, { credentials: 'same-origin' })
-                .then(function (r) { return r.json(); })
-                .then(function (payload) {
-                    render(payload.events || []);
-                })
-                .catch(function (err) {
-                    canvas.parentNode.innerHTML = '<p class="text-danger">{{ 'Could not load timeline data.'|trans|e('js') }}</p>';
-                    console.error(err);
-                });
-
-            document.getElementById('btn-centra-hoy').addEventListener('click', function () {
-                if (!chart) return;
-                const ref = new Date();
-                chart.options.scales.x.min = new Date(ref.getTime() - monthMs);
-                chart.options.scales.x.max = new Date(ref.getTime() + monthMs);
-                chart.update();
-            });
-        })();
-    </script>
 {% endblock %}

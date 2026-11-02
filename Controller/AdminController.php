@@ -15,11 +15,18 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_ACCESS_MULTIMEDIA_SERIES')]
 class AdminController extends AbstractController implements NewAdminControllerInterface
 {
-    public function __construct(private readonly TemporizedDecisionService $temporizedDecisionService) {}
+    public function __construct(
+        private readonly TemporizedDecisionService $temporizedDecisionService,
+        private readonly bool $isEnabled,
+    ) {}
 
     #[Route('/admin/timedpubdecisions/option/{id}/{pub}', name: TemporizedDecisionService::ROUTE, methods: ['GET'])]
     public function optionsPubAction(MultimediaObject $multimediaObject, string $pub): Response
     {
+        if (!$this->isEnabled) {
+            return new Response();
+        }
+
         if (!$this->temporizedDecisionService->isTemporized($pub)) {
             throw $this->createNotFoundException();
         }

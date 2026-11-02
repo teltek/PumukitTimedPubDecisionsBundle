@@ -64,6 +64,44 @@ class ControllersTest extends TimedPubDecisionsTestCase
         $this->assertResponseIsSuccessful();
     }
 
+    public function testTheOptionsShowWhenTheStartWasApplied(): void
+    {
+        $video = $this->temporized(MultimediaObject::STATUS_PUBLISHED, 'PUDETV', '2026-11-02T10:00', '2026-11-09T10:00', ['temporized_published_PUDETV' => '2026-11-02T10:05']);
+        $this->login(['ROLE_ACCESS_MULTIMEDIA_SERIES']);
+
+        $crawler = $this->client->request('GET', '/admin/timedpubdecisions/option/'.$video->getId().'/PUDETV');
+
+        $this->assertCount(1, $crawler->filter('#optionsTemporized_PUDETV[checked]'));
+        $this->assertCount(0, $crawler->filter('#temporized_from_PUDETV[disabled]'));
+        $this->assertStringContainsString('2026-11-02 10:05', $crawler->filter('.form-text')->text());
+        $this->assertCount(0, $crawler->filter('script, style, [style], [onclick]'));
+    }
+
+    public function testTheTimelineShowsTheDecisionsOfThePeriod(): void
+    {
+        $inside = $this->temporized(MultimediaObject::STATUS_BLOCKED, 'PUDETV', '2026-11-10T10:00', '2026-11-20T10:00');
+        $inside->setTitle('Inside', 'en');
+        $outside = $this->temporized(MultimediaObject::STATUS_BLOCKED, 'PUDERADIO', '2027-06-01T10:00', '2027-06-20T10:00');
+        $outside->setTitle('Outside', 'en');
+        $permanent = $this->video(MultimediaObject::STATUS_PUBLISHED, ['PUDERADIO']);
+        $permanent->setTitle('Permanent one', 'en');
+        $this->dm->flush();
+        $this->login(['ROLE_ACCESS_TIMEDPUBDECISIONS_TIMELINE']);
+
+        $crawler = $this->client->request('GET', '/admin/timeframes/default?status=processing&start=2026-11-01');
+
+        $this->assertResponseIsSuccessful();
+        $text = $crawler->filter('.tpd-timeline')->text();
+        $this->assertStringContainsString('Inside', $text);
+        $this->assertStringContainsString('Permanent one', $text);
+        $this->assertStringNotContainsString('Outside', $text);
+        $this->assertCount(1, $crawler->filter('.tpd-bar[data-from="2026-11-10T10:00"][data-to="2026-11-20T10:00"]'));
+        $this->assertCount(0, $crawler->filter('.pmk-well script, .pmk-well [style], .pmk-well [onchange]'));
+
+        $crawler = $this->client->request('GET', '/admin/timeframes/default?status=processing&start=2026-11-01&tag=PUDETV');
+        $this->assertStringNotContainsString('Permanent one', $crawler->filter('.tpd-timeline')->text());
+    }
+
     public function testThePortalOnlyListsTemporizedDecisions(): void
     {
         $this->client->request('GET', '/destacados/PUDENEW/');

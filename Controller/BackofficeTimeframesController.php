@@ -9,158 +9,131 @@ use Pumukit\NewAdminBundle\Controller\NewAdminControllerInterface;
 use Pumukit\SchemaBundle\Document\MultimediaObject;
 use Pumukit\TimedPubDecisionsBundle\Services\TemporizedDecisionService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[IsGranted('ROLE_ACCESS_TIMEDPUBDECISIONS_TIMELINE')]
 class BackofficeTimeframesController extends AbstractController implements NewAdminControllerInterface
 {
-    public static $colors = [
-        'PUDERADIO' => '#0000FF',
-        'PUDETV' => '#50AA50',
+    public const DAYS = 90;
+    private const STEP_DAYS = 30;
+    private const BATCH_SIZE = 500;
+    private const STATUS_FILTERS = [
+        'published' => [MultimediaObject::STATUS_PUBLISHED],
+        'unpublished' => [MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN],
+        'all' => [MultimediaObject::STATUS_PUBLISHED, MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN],
+        'processing' => [MultimediaObject::STATUS_PUBLISHED, MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN],
     ];
 
     public function __construct(
-        private readonly RouterInterface $router,
         private readonly DocumentManager $documentManager,
         private readonly TemporizedDecisionService $temporizedDecisionService,
+        private readonly bool $isEnabled,
     ) {}
 
-    #[Route('/admin/timeframes')]
-    #[Route('/admin/timeframes/default', name: 'pumukit_newadmin_timeframes_index_default')]
+    #[Route('/admin/timeframes', methods: ['GET'])]
+    #[Route('/admin/timeframes/default', name: 'pumukit_newadmin_timeframes_index_default', methods: ['GET'])]
     public function indexAction(Request $request): Response
     {
-        $session = $request->getSession();
-
-        if ($request->query->has('status')) {
-            if ('' === trim($request->query->get('status'))) {
-                $session->remove('pumukit_timed_pub_decisions.status');
-            } else {
-                $session->set('pumukit_timed_pub_decisions.status', $request->query->get('status'));
-            }
+        if (!$this->isEnabled) {
+            throw $this->createNotFoundException();
         }
 
-        if ($request->query->has('tags')) {
-            if ('' === trim($request->query->get('tags'))) {
-                $session->remove('pumukit_timed_pub_decisions.tags');
-            } else {
-                $session->set('pumukit_timed_pub_decisions.tags', $request->query->get('tags'));
-            }
+        $codes = $this->temporizedDecisionService->tagCodes();
+        $tag = $request->query->getString('tag');
+        $selectedCodes = in_array($tag, $codes, true) ? [$tag] : $codes;
+        $status = $request->query->getString('status', 'all');
+        if (!isset(self::STATUS_FILTERS[$status])) {
+            $status = 'all';
         }
+
+        $today = new \DateTimeImmutable('today');
+        $start = \DateTimeImmutable::createFromFormat('!Y-m-d', $request->query->getString('start')) ?: $today->modify(sprintf('-%d days', self::STEP_DAYS));
+        $end = $start->modify(sprintf('+%d days', self::DAYS));
 
         return $this->render('@PumukitTimedPubDecisions/BackofficeTimeframes/index.html.twig', [
-            'colors' => self::$colors,
+            'codes' => $codes,
+            'tag' => $tag,
+            'status' => $status,
+            'statuses' => array_keys(self::STATUS_FILTERS),
+            'start' => $start,
+            'end' => $end,
+            'today' => $today,
+            'previous' => $start->modify(sprintf('-%d days', self::STEP_DAYS)),
+            'next' => $start->modify(sprintf('+%d days', self::STEP_DAYS)),
+            'months' => $this->months($start, $end),
+            'rows' => [] === $selectedCodes ? [] : $this->rows($selectedCodes, $status, $start, $end),
         ]);
     }
 
-    #[Route('/admin/timeframes/series/timeline.json', name: 'pumukit_newadmin_timeframes_json')]
-    public function seriesTimelineAction(Request $request): JsonResponse
+    private function rows(array $codes, string $status, \DateTimeImmutable $start, \DateTimeImmutable $end): array
     {
-        $session = $request->getSession();
-
-        $twoMonthsBefore = (new \DateTimeImmutable('-2 month'))->format(\DateTimeInterface::ATOM);
-        $twoMonthsAfter = (new \DateTimeImmutable('+2 month'))->format(\DateTimeInterface::ATOM);
-
-        $status = [MultimediaObject::STATUS_PUBLISHED, MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN];
-        if ('0' === $session->get('pumukit_timed_pub_decisions.status')) {
-            $status = [MultimediaObject::STATUS_PUBLISHED];
-        } elseif ('1' === $session->get('pumukit_timed_pub_decisions.status')) {
-            $status = [MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN];
-        }
-
-        if ($session->has('pumukit_timed_pub_decisions.tags')) {
-            $targetTags = (array) $session->get('pumukit_timed_pub_decisions.tags');
-        } else {
-            $targetTags = $this->temporizedDecisionService->tagCodes();
-        }
-
-        $qb = $this->documentManager->createQueryBuilder(MultimediaObject::class);
-        $qb->field('status')->in($status)->field('tags.cod')->in($targetTags);
-
-        if ('-1' !== $session->get('pumukit_timed_pub_decisions.status')) {
-            $qb->addAnd(
-                $qb->expr()->field('tags.cod')->equals('PUCHWEBTV')
-            );
-
-            $qb->addOr(
-                [
-                    'tracks' => [
-                        '$elemMatch' => [
-                            'tags' => 'display',
-                            'hide' => false,
-                        ],
-                    ],
-                ],
-                [
-                    'properties.externalplayer' => [
-                        '$exists' => true,
-                        '$ne' => '',
-                    ],
-                ]
+        $queryBuilder = $this->documentManager->createQueryBuilder(MultimediaObject::class)
+            ->field('status')->in(self::STATUS_FILTERS[$status])
+            ->field('tags.cod')->in($codes)
+            ->sort('_id', 'asc')
+        ;
+        if ('processing' !== $status) {
+            $queryBuilder->addAnd($queryBuilder->expr()->field('tags.cod')->equals('PUCHWEBTV'));
+            $queryBuilder->addOr(
+                ['tracks' => ['$elemMatch' => ['tags' => 'display', 'hide' => false]]],
+                ['properties.externalplayer' => ['$exists' => true, '$ne' => '']],
             );
         }
 
-        $qb->sort('_id', 'asc');
-
-        $events = [];
-
-        $batchSize = 500;
+        $windowStart = $start->format(TemporizedDecisionService::DATE_FORMAT);
+        $windowEnd = $end->format(TemporizedDecisionService::DATE_FORMAT);
+        $rows = [];
         $skip = 0;
-
         do {
-            $batchQb = clone $qb;
-
-            $batchQb
-                ->skip($skip)
-                ->limit($batchSize)
-            ;
-
-            $mms = $batchQb->getQuery()->execute();
-            $processed = 0;
-
-            foreach ($mms as $mm) {
-                ++$processed;
-
-                foreach ($targetTags as $tag) {
-                    if (!$mm->containsTagWithCod($tag)) {
+            $batch = (clone $queryBuilder)->skip($skip)->limit(self::BATCH_SIZE)->getQuery()->execute()->toArray();
+            foreach ($batch as $multimediaObject) {
+                foreach ($codes as $code) {
+                    if (!$multimediaObject->containsTagWithCod($code)) {
                         continue;
                     }
-
-                    $permanent = !$mm->getProperty('temporized_'.$tag);
-                    if ($permanent) {
-                        $start = $twoMonthsBefore;
-                        $end = $twoMonthsAfter;
-                    } else {
-                        $start = (new \DateTimeImmutable($mm->getProperty('temporized_from_'.$tag)))->format(\DateTimeInterface::ATOM);
-                        $end = (new \DateTimeImmutable($mm->getProperty('temporized_to_'.$tag)))->format(\DateTimeInterface::ATOM);
+                    $row = $this->row($multimediaObject, $code);
+                    if ($row['permanent'] || ($row['from'] <= $windowEnd && $row['to'] >= $windowStart)) {
+                        $rows[] = $row;
                     }
-
-                    $events[] = [
-                        'title' => $mm->getTitle(),
-                        'start' => $start,
-                        'end' => $end,
-                        'tag' => $tag,
-                        'color' => self::$colors[$tag] ?? '#666666',
-                        'permanent' => $permanent,
-                        'link' => $this->router->generate('pumukitnewadmin_mms_shortener', ['id' => $mm->getId()], UrlGeneratorInterface::ABSOLUTE_URL),
-                    ];
                 }
-
-                $this->documentManager->detach($mm);
+                $this->documentManager->detach($multimediaObject);
             }
+            $skip += self::BATCH_SIZE;
+        } while (self::BATCH_SIZE === count($batch));
 
-            $skip += $processed;
+        usort($rows, static fn (array $a, array $b): int => [$a['permanent'], $a['from'], $a['title']] <=> [$b['permanent'], $b['from'], $b['title']]);
 
-            unset($mms, $batchQb);
+        return $rows;
+    }
 
-            gc_collect_cycles();
-        } while ($processed === $batchSize);
+    private function row(MultimediaObject $multimediaObject, string $code): array
+    {
+        $temporary = TemporizedDecisionService::TEMPORARY === $multimediaObject->getProperty('temporized_'.$code);
+        $from = $temporary ? TemporizedDecisionService::normalize($multimediaObject->getProperty('temporized_from_'.$code)) : null;
+        $to = $temporary ? TemporizedDecisionService::normalize($multimediaObject->getProperty('temporized_to_'.$code)) : null;
 
-        return new JsonResponse(['events' => $events]);
+        return [
+            'id' => $multimediaObject->getId(),
+            'title' => $multimediaObject->getTitle(),
+            'status' => $multimediaObject->getStatus(),
+            'code' => $code,
+            'permanent' => null === $from || null === $to,
+            'from' => $from ?? '',
+            'to' => $to ?? '',
+            'applied' => $multimediaObject->getProperty('temporized_published_'.$code),
+        ];
+    }
+
+    private function months(\DateTimeImmutable $start, \DateTimeImmutable $end): array
+    {
+        $months = [];
+        for ($month = $start->modify('first day of next month'); $month < $end; $month = $month->modify('+1 month')) {
+            $months[] = $month;
+        }
+
+        return $months;
     }
 }
