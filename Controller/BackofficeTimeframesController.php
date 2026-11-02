@@ -7,6 +7,7 @@ namespace Pumukit\TimedPubDecisionsBundle\Controller;
 use Doctrine\ODM\MongoDB\DocumentManager;
 use Pumukit\NewAdminBundle\Controller\NewAdminControllerInterface;
 use Pumukit\SchemaBundle\Document\MultimediaObject;
+use Pumukit\TimedPubDecisionsBundle\Services\TemporizedDecisionService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,11 +15,11 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
+#[IsGranted('ROLE_ACCESS_TIMEDPUBDECISIONS_TIMELINE')]
 class BackofficeTimeframesController extends AbstractController implements NewAdminControllerInterface
 {
-    public static $tags = ['PUDERADIO', 'PUDETV'];
-
     public static $colors = [
         'PUDERADIO' => '#0000FF',
         'PUDETV' => '#50AA50',
@@ -27,6 +28,7 @@ class BackofficeTimeframesController extends AbstractController implements NewAd
     public function __construct(
         private readonly RouterInterface $router,
         private readonly DocumentManager $documentManager,
+        private readonly TemporizedDecisionService $temporizedDecisionService,
     ) {}
 
     #[Route('/admin/timeframes')]
@@ -74,7 +76,7 @@ class BackofficeTimeframesController extends AbstractController implements NewAd
         if ($session->has('pumukit_timed_pub_decisions.tags')) {
             $targetTags = (array) $session->get('pumukit_timed_pub_decisions.tags');
         } else {
-            $targetTags = self::$tags;
+            $targetTags = $this->temporizedDecisionService->tagCodes();
         }
 
         $qb = $this->documentManager->createQueryBuilder(MultimediaObject::class);

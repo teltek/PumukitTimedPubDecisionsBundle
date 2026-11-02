@@ -4,77 +4,49 @@ declare(strict_types=1);
 
 namespace Pumukit\TimedPubDecisionsBundle\Command;
 
-use Doctrine\ODM\MongoDB\DocumentManager;
-use Pumukit\SchemaBundle\Document\MultimediaObject;
-use Pumukit\SchemaBundle\Event\MultimediaObjectEvent;
-use Pumukit\SchemaBundle\Event\SchemaEvents;
+use Pumukit\TimedPubDecisionsBundle\Services\TemporizedDecisionService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 #[AsCommand(name: 'timedpubdecisions:publish:objects', description: 'Publish multimedia objects with a temporal decision')]
 class PublishCommand extends Command
 {
-    public function __construct(private readonly DocumentManager $dm, private readonly EventDispatcherInterface $eventDispatcher)
+    public function __construct(private readonly TemporizedDecisionService $temporizedDecisionService)
     {
         parent::__construct();
     }
 
     protected function configure(): void
     {
-        $this->setHelp(
-            <<<'EOT'
+        $this
+            ->addOption('dry-run', null, InputOption::VALUE_NONE, 'List the multimedia objects that would be published without changing them')
+            ->setHelp(
+                <<<'EOT'
+                    The <info>timedpubdecisions:publish:objects</info> command publishes the blocked or hidden multimedia
+                    objects whose temporized decision has started. Each start date is applied once: if the video is
+                    unpublished afterwards, it is not published again until the start date is changed.
 
-The <info>timedpubdecisions:publish:objects</info> publish multimedia objects with a temporal decision.
+                    To use in a crontab:
 
-To use in a crontab:
-
-  <info>crontab:*/5 * * * * apache /usr/bin/php /var/www/pumukit/bin/console timedpubdecisions:publish:objects</info>
-
-
-EOT
-        );
+                      <info>*/5 * * * * /usr/local/bin/php /srv/pumukit/bin/console timedpubdecisions:publish:objects --env=prod</info>
+                    EOT
+            )
+        ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $timedCode = 'PUDERADIO';
-        $this->updateMultimediaObjects($output, $timedCode);
+        $dryRun = (bool) $input->getOption('dry-run');
+        $published = $this->temporizedDecisionService->publishDue(new \DateTimeImmutable(), $dryRun);
 
-        $timedCode = 'PUDETV';
-        $this->updateMultimediaObjects($output, $timedCode);
+        foreach ($published as $multimediaObject) {
+            $output->writeln(sprintf('%s %s', $dryRun ? 'Would publish' : 'Published', $multimediaObject->getId()));
+        }
+        $output->writeln(sprintf('%d multimedia objects %s', count($published), $dryRun ? 'would be published' : 'published'));
 
         return Command::SUCCESS;
-    }
-
-    protected function updateMultimediaObjects(OutputInterface $output, $timedCode)
-    {
-        $repo = $this->dm->getRepository(MultimediaObject::class);
-        $status = [MultimediaObject::STATUS_BLOCKED, MultimediaObject::STATUS_HIDDEN];
-
-        $tagCodes = [$timedCode];
-        $mms = $repo->createQueryBuilder()
-            ->field('status')->in($status)
-            ->field('tags.cod')->in($tagCodes)
-            ->field('properties.temporized_from_'.$timedCode)->lte(date('Y-m-d\TH:i'))
-            ->getQuery()->execute()
-        ;
-
-        if (0 === $mms->count()) {
-            $output->writeln(sprintf('No multimedia objects to update'));
-
-            return;
-        }
-
-        foreach ($mms as $mm) {
-            $mm->setStatus(MultimediaObject::STATUS_PUBLISHED);
-            $this->dm->flush();
-
-            $event = new MultimediaObjectEvent($mm);
-            $this->eventDispatcher->dispatch($event, SchemaEvents::MULTIMEDIAOBJECT_UPDATE);
-            $output->writeln(sprintf('Updated '.$timedCode.' mm: %s', $mm->getId()));
-        }
     }
 }

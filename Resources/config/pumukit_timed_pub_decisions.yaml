@@ -17,6 +17,8 @@ services:
     resource: '../../Command/'
     tags: ['console.command']
 
+  Pumukit\TimedPubDecisionsBundle\Services\TemporizedDecisionService: ~
+
   Pumukit\TimedPubDecisionsBundle\EventListener\BackofficeListener:
     class: Pumukit\TimedPubDecisionsBundle\EventListener\BackofficeListener
     tags:

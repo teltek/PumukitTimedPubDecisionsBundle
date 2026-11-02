@@ -9,19 +9,17 @@ use Doctrine\ODM\MongoDB\DocumentManager;
 use Pumukit\CoreBundle\Controller\WebTVControllerInterface;
 use Pumukit\SchemaBundle\Document\MultimediaObject;
 use Pumukit\SchemaBundle\Document\Tag;
+use Pumukit\TimedPubDecisionsBundle\Services\TemporizedDecisionService;
 use Pumukit\WebTVBundle\Services\BreadcrumbsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Contracts\Translation\TranslatorInterface;
 
 class TimedPubDecisionsController extends AbstractController implements WebTVControllerInterface
 {
-    private array $temporizedChannels = ['PUDETV', 'PUDERADIO'];
-
     public function __construct(
         private readonly DocumentManager $documentManager,
-        private readonly TranslatorInterface $translator,
+        private readonly TemporizedDecisionService $temporizedDecisionService,
         private readonly BreadcrumbsService $breadcrumbsService,
         private readonly bool $scrollListByTag,
         private readonly int $columnsObjsByTag,
@@ -30,19 +28,14 @@ class TimedPubDecisionsController extends AbstractController implements WebTVCon
     #[Route('/destacados/menu/', name: 'pumukit_timed_pub_decisions_menu')]
     public function menuTemporizedAction(): Response
     {
-        $tags = [];
-        foreach ($this->temporizedChannels as $channel) {
-            $tags[] = $this->documentManager->getRepository(Tag::class)->findOneBy(['cod' => $channel]);
-        }
-
-        return $this->render('@PumukitTimedPubDecisions/menu/links.html.twig', ['temporizedChannels' => $tags]);
+        return $this->render('@PumukitTimedPubDecisions/menu/links.html.twig', ['temporizedChannels' => $this->temporizedDecisionService->tags()]);
     }
 
     #[Route('/destacados/{tagCod}/', name: 'pumukit_timed_pub_decisions_by_tag')]
     public function temporizedByTagAction(#[MapDocument(mapping: ['tagCod' => 'cod'])] Tag $tag): Response
     {
-        if (!in_array($tag->getCod(), $this->temporizedChannels)) {
-            throw new \Exception($this->translator->trans('This tag is not a temporized publication decision'));
+        if (!$this->temporizedDecisionService->isTemporized($tag->getCod())) {
+            throw $this->createNotFoundException('This tag is not a temporized publication decision');
         }
 
         $multimediaObjects = $this->documentManager->getRepository(MultimediaObject::class)->findBy(
@@ -50,19 +43,11 @@ class TimedPubDecisionsController extends AbstractController implements WebTVCon
             ['record_date' => 'desc']
         );
 
+        $now = new \DateTimeImmutable();
         $mmoGroupBy = [];
         foreach ($multimediaObjects as $multimediaObject) {
-            $recordDate = $multimediaObject->getRecordDate();
-            $year = $recordDate->format('Y');
-            if ($multimediaObject->getProperty('temporized_'.$tag->getCod())) {
-                $date = date('Y-m-d H:i');
-                $from = $multimediaObject->getProperty('temporized_from_'.$tag->getCod());
-                $to = $multimediaObject->getProperty('temporized_to_'.$tag->getCod());
-                if (strtotime($date) >= strtotime($from) and strtotime($to) >= strtotime($date)) {
-                    $mmoGroupBy[$year][] = $multimediaObject;
-                }
-            } else {
-                $mmoGroupBy[$year][] = $multimediaObject;
+            if ($this->temporizedDecisionService->isActive($multimediaObject, $tag->getCod(), $now)) {
+                $mmoGroupBy[$multimediaObject->getRecordDate()->format('Y')][] = $multimediaObject;
             }
         }
 
