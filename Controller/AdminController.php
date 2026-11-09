@@ -17,16 +17,11 @@ class AdminController extends AbstractController implements NewAdminControllerIn
 {
     public function __construct(
         private readonly TemporizedDecisionService $temporizedDecisionService,
-        private readonly bool $isEnabled,
     ) {}
 
     #[Route('/admin/timedpubdecisions/option/{id}/{pub}', name: TemporizedDecisionService::ROUTE, methods: ['GET'])]
     public function optionsPubAction(MultimediaObject $multimediaObject, string $pub): Response
     {
-        if (!$this->isEnabled) {
-            return new Response();
-        }
-
         if (!$this->temporizedDecisionService->isTemporized($pub)) {
             throw $this->createNotFoundException();
         }

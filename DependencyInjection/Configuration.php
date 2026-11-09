@@ -18,7 +18,7 @@ class Configuration implements ConfigurationInterface
             ->children()
             ->booleanNode('enable')
             ->defaultTrue()
-            ->info('If false, the decisions are not temporized, the commands do nothing and the pages return 404')
+            ->info('If false, the decisions are not temporized, the pages return 404 and nothing else of the bundle is loaded: no commands, listener, menu or permission')
             ->end()
             ->scalarNode('default_group_temporized')
             ->defaultValue('year')

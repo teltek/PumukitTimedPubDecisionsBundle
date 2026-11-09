@@ -23,19 +23,18 @@ class TimedPubDecisionsController extends AbstractController implements WebTVCon
         private readonly BreadcrumbsService $breadcrumbsService,
         private readonly bool $scrollListByTag,
         private readonly int $columnsObjsByTag,
-        private readonly bool $isEnabled,
     ) {}
 
     #[Route('/destacados/menu/', name: 'pumukit_timed_pub_decisions_menu')]
     public function menuTemporizedAction(): Response
     {
-        return $this->render('@PumukitTimedPubDecisions/menu/links.html.twig', ['temporizedChannels' => $this->isEnabled ? $this->temporizedDecisionService->tags() : []]);
+        return $this->render('@PumukitTimedPubDecisions/menu/links.html.twig', ['temporizedChannels' => $this->temporizedDecisionService->tags()]);
     }
 
     #[Route('/destacados/{tagCod}/', name: 'pumukit_timed_pub_decisions_by_tag')]
     public function temporizedByTagAction(#[MapDocument(mapping: ['tagCod' => 'cod'])] Tag $tag): Response
     {
-        if (!$this->isEnabled || !$this->temporizedDecisionService->isTemporized($tag->getCod())) {
+        if (!$this->temporizedDecisionService->isTemporized($tag->getCod())) {
             throw $this->createNotFoundException('This tag is not a temporized publication decision');
         }
 

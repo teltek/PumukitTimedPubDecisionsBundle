@@ -7,7 +7,6 @@ services:
       $scrollListByTag: '%scroll_list_bytag%'
       $columnsObjsByTag: '%columns_objs_bytag%'
       $locales: "%pumukit.locales%"
-      $isEnabled: '%pumukit_timed_pub_decisions.enable%'
 
   Pumukit\TimedPubDecisionsBundle\Controller\:
     resource: '../../Controller'

@@ -30,17 +30,12 @@ class BackofficeTimeframesController extends AbstractController implements NewAd
     public function __construct(
         private readonly DocumentManager $documentManager,
         private readonly TemporizedDecisionService $temporizedDecisionService,
-        private readonly bool $isEnabled,
     ) {}
 
     #[Route('/admin/timeframes', methods: ['GET'])]
     #[Route('/admin/timeframes/default', name: 'pumukit_newadmin_timeframes_index_default', methods: ['GET'])]
     public function indexAction(Request $request): Response
     {
-        if (!$this->isEnabled) {
-            throw $this->createNotFoundException();
-        }
-
         $codes = $this->temporizedDecisionService->tagCodes();
         $tag = $request->query->getString('tag');
         $selectedCodes = in_array($tag, $codes, true) ? [$tag] : $codes;
