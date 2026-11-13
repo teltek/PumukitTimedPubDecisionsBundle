@@ -16,7 +16,8 @@ If Symfony Flex does not do it, add the bundle to `config/bundles.php`:
 Pumukit\TimedPubDecisionsBundle\PumukitTimedPubDecisionsBundle::class => ['all' => true],
 ```
 
-Create the default temporized decisions, `PUDERADIO` and `PUDETV`, under `PUBDECISIONS`:
+Create the default temporized decisions, `PUDERADIO` and `PUDETV`, under `PUBDECISIONS` with
+`php bin/console pumukit:setup` of PuMuKIT, which runs the setup of every enabled bundle, or only with:
 
 ```bash
 php bin/console timedpubdecisions:init:tags
@@ -84,3 +85,6 @@ decision: the ones that were unpublished by hand and, on installations that neve
   `/admin/timedpubdecisions/option/{id}/{pub}`, and needs `ROLE_ACCESS_MULTIMEDIA_SERIES`. The timeline checks its
   permission.
 - Invalid dates, or an end before the start, are rejected when the publication tab is saved.
+- `timedpubdecisions:init:tags` only creates the tags that do not exist; before, it deleted them and created them again
+  on every run when no multimedia object used them. `--force` keeps that behaviour. `pumukit:setup` runs it on every
+  deployment.

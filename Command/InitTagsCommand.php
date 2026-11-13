@@ -11,10 +11,14 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
-#[AsCommand(name: 'timedpubdecisions:init:tags', description: 'Load Timed publication decisions tag data fixture to your database')]
+#[AsCommand(name: 'timedpubdecisions:init:tags', description: 'Create the PUDERADIO and PUDETV tags if they do not exist')]
+#[AutoconfigureTag('pumukit.setup')]
 class InitTagsCommand extends Command
 {
+    private const TAGS = ['PUDERADIO' => 'Destacados Radio', 'PUDETV' => 'Destacados TV'];
+
     public function __construct(private readonly DocumentManager $dm, private readonly array $locales)
     {
         parent::__construct();
@@ -22,108 +26,64 @@ class InitTagsCommand extends Command
 
     protected function configure(): void
     {
-        $this->addOption('force', null, InputOption::VALUE_NONE, 'Set this parameter to execute this action')->setHelp(
+        $this->addOption('force', null, InputOption::VALUE_NONE, 'Delete and create again the tags when no multimedia object uses them')->setHelp(
             <<<'EOT'
-Command to load a controlled Timed publication decisions tags data into a database.
+Creates the PUDERADIO and PUDETV tags under PUBDECISIONS when they do not exist.
 
-This command will create two new tags ( PUDERADIO and PUDETV )
-
-The --force parameter has to be used to drop old created tag PUDERADIO and PUDETV from the database.
-
-Ever drops old tags.
-
+With --force, the existing tags are deleted and created again, only if no multimedia object uses them.
 EOT
         );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $parentTag = $this->dm->getRepository(Tag::class)->findOneBy(['cod' => 'PUBDECISIONS']);
-        if (!$parentTag) {
-            throw new \Exception(
-                ' Nothing done - There is no tag in the database with code PUBDECISIONS to be the parent tag'
-            );
+        $repository = $this->dm->getRepository(Tag::class);
+        $parentTag = $repository->findOneBy(['cod' => 'PUBDECISIONS']);
+        if (!$parentTag instanceof Tag) {
+            $output->writeln('<error>There is no tag PUBDECISIONS to be the parent tag: run pumukit:init:repo first.</error>');
+
+            return Command::FAILURE;
         }
 
-        $allowDelete = $this->checkTags($output);
+        if ($input->getOption('force')) {
+            foreach (array_keys(self::TAGS) as $code) {
+                $tag = $repository->findOneBy(['cod' => $code]);
+                if ($tag instanceof Tag && 0 < $tag->getNumberMultimediaObjects()) {
+                    $output->writeln(sprintf('<error>%s has %d multimedia objects: nothing is deleted.</error>', $code, $tag->getNumberMultimediaObjects()));
 
-        if ($allowDelete) {
-            $this->removeTags($output);
-            $this->addTags($parentTag, $output);
+                    return Command::FAILURE;
+                }
+            }
+            foreach (array_keys(self::TAGS) as $code) {
+                if ($tag = $repository->findOneBy(['cod' => $code])) {
+                    $this->dm->remove($tag);
+                    $output->writeln(sprintf('The tag %s is deleted.', $code));
+                }
+            }
+            $this->dm->flush();
+        }
+
+        foreach (self::TAGS as $code => $title) {
+            if ($repository->findOneBy(['cod' => $code])) {
+                $output->writeln(sprintf('The tag %s already exists.', $code));
+
+                continue;
+            }
+
+            $tag = new Tag();
+            $tag->setCod($code);
+            $tag->setMetatag(false);
+            $tag->setDisplay(true);
+            foreach ($this->locales as $locale) {
+                $tag->setTitle($title, $locale);
+            }
+            $tag->setParent($parentTag);
+            $tag->setProperty('route', 'pumukit_timed_pub_decisions_index');
+            $this->dm->persist($tag);
+            $this->dm->flush();
+            $output->writeln(sprintf('The tag %s is created.', $code));
         }
 
         return Command::SUCCESS;
-    }
-
-    private function checkTags($output)
-    {
-        $foundTags = $this->dm->getRepository(Tag::class)->findBy(
-            ['cod' => ['$in' => ['PUDERADIO', 'PUDETV']]]
-        );
-
-        if ($foundTags) {
-            $output->writeln('<comment> There are tags with cod PUDERADIO or PUDETV</comment>');
-
-            foreach ($foundTags as $tag) {
-                if (0 < $tag->getNumberMultimediaObjects()) {
-                    $output->writeln('<info> '.$tag->getCod().' has '.$tag->getNumberMultimediaObjects().' multimedia objects associated</info>');
-
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    private function removeTags($output)
-    {
-        $pudeRadio = $this->dm->getRepository(Tag::class)->findOneBy(
-            ['cod' => 'PUDERADIO']
-        );
-
-        if ($pudeRadio) {
-            $this->dm->remove($pudeRadio);
-            $this->dm->flush();
-            $output->writeln('<info> Removing '.$pudeRadio->getCod().'</info>');
-        }
-
-        $pudeTV = $this->dm->getRepository(Tag::class)->findOneBy(
-            ['cod' => 'PUDETV']
-        );
-
-        if ($pudeTV) {
-            $this->dm->remove($pudeTV);
-            $this->dm->flush();
-            $output->writeln('<info> Removing '.$pudeTV->getCod().'</info>');
-        }
-    }
-
-    private function addTags($parent, $output)
-    {
-        $radioTag = $this->createTagWithCode('PUDERADIO', 'Destacados Radio', $parent, false);
-        $output->writeln('Tag persisted - new id: '.$radioTag->getId().' cod: '.$radioTag->getCod());
-
-        $tvTag = $this->createTagWithCode('PUDETV', 'Destacados TV', $parent, false);
-        $output->writeln('Tag persisted - new id: '.$tvTag->getId().' cod: '.$tvTag->getCod());
-    }
-
-    private function createTagWithCode($code, $title, $parentTag, $metatag = false)
-    {
-        $tag = new Tag();
-        $tag->setCod($code);
-        $tag->setMetatag($metatag);
-        $tag->setDisplay(true);
-
-        foreach ($this->locales as $language) {
-            $tag->setTitle($title, $language);
-        }
-
-        $tag->setParent($parentTag);
-        $tag->setProperty('route', 'pumukit_timed_pub_decisions_index');
-        $this->dm->persist($tag);
-        $this->dm->flush();
-
-        return $tag;
     }
 }
